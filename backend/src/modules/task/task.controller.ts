@@ -5,6 +5,7 @@ import {
   Body,
   Patch,
   Param,
+  ParseUUIDPipe,
   Delete,
   Request,
   Query,
@@ -51,14 +52,14 @@ export class TaskController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get task by ID' })
-  async findOne(@Param('id') id: string): Promise<Task> {
+  async findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string): Promise<Task> {
     return this.taskService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update task' })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
   ): Promise<Task> {
     return this.taskService.update(id, updateTaskDto);
@@ -67,7 +68,7 @@ export class TaskController {
   @Patch(':id/progress')
   @ApiOperation({ summary: 'Update task progress' })
   async updateProgress(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateProgressDto: UpdateProgressDto,
   ): Promise<Task> {
     return this.taskService.updateProgress(id, updateProgressDto);
@@ -75,7 +76,7 @@ export class TaskController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete task' })
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string): Promise<void> {
     return this.taskService.remove(id);
   }
 }
