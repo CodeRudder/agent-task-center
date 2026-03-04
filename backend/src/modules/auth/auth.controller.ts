@@ -4,18 +4,20 @@ import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, AuthResponseDto } from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
+import { Public } from '../../common/decorators/public.decorator';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(registerDto);
   }
 
-  @UseGuards(LocalAuthGuard)
+  @Public()
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {

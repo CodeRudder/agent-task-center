@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { TaskModule } from './modules/task/task.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { AgentsModule } from './modules/agents/agents.module';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -19,13 +20,14 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 import { appConfig } from './config/app.config';
+import { jwtConfig } from './config/jwt.config';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, redisConfig],
+load: [appConfig, databaseConfig, redisConfig, jwtConfig],
       envFilePath: ['../.env', '.env'],
     }),
 
@@ -40,7 +42,7 @@ import { appConfig } from './config/app.config';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: false,
         logging: configService.get<string>('NODE_ENV') === 'development',
         autoLoadEntities: true,
       }),
@@ -60,6 +62,7 @@ import { appConfig } from './config/app.config';
     UserModule,
     TaskModule,
     NotificationModule,
+    AgentsModule,
   ],
   providers: [
     // Global Filters

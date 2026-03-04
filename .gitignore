@@ -21,6 +21,7 @@ build/
 *.swp
 *.swo
 *~
+*.bak*
 
 # OS
 .DS_Store
