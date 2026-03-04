@@ -51,7 +51,7 @@ export class TemplatesController {
   @ApiResponse({ status: 200, description: 'Template details' })
   @ApiResponse({ status: 404, description: 'Template not found' })
   async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ): Promise<TaskTemplate> {
     return this.templatesService.findOne(id);
   }
@@ -61,7 +61,7 @@ export class TemplatesController {
   @ApiResponse({ status: 200, description: 'Template updated successfully' })
   @ApiResponse({ status: 404, description: 'Template not found' })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateTemplateDto: UpdateTemplateDto,
   ): Promise<TaskTemplate> {
     return this.templatesService.update(id, updateTemplateDto);
@@ -71,7 +71,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Delete template' })
   @ApiResponse({ status: 200, description: 'Template deleted successfully' })
   @ApiResponse({ status: 404, description: 'Template not found' })
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string): Promise<void> {
     return this.templatesService.remove(id);
   }
 
@@ -81,7 +81,7 @@ export class TemplatesController {
   @ApiResponse({ status: 404, description: 'Template not found' })
   @ApiResponse({ status: 400, description: 'Template is not active' })
   async applyTemplate(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() applyDto: ApplyTemplateDto,
     @Request() req,
   ): Promise<Task> {
