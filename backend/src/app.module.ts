@@ -10,6 +10,7 @@ import { UserModule } from './modules/user/user.module';
 import { TaskModule } from './modules/task/task.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { AgentsModule } from './modules/agents/agents.module';
+import { TemplatesModule } from './modules/templates/templates.module';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -63,6 +64,7 @@ load: [appConfig, databaseConfig, redisConfig, jwtConfig],
     TaskModule,
     NotificationModule,
     AgentsModule,
+    TemplatesModule,
   ],
   providers: [
     // Global Filters
