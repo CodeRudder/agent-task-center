@@ -103,6 +103,10 @@ export class AgentsService {
       type: agent.type,
       status: agent.status,
       maxConcurrentTasks: agent.maxConcurrentTasks,
+      apiToken: agent.apiToken,
+      apiTokenExpiresAt: agent.apiTokenExpiresAt,
+      lastApiAccessAt: agent.lastApiAccessAt,
+      role: agent.role,
       createdAt: agent.createdAt,
       updatedAt: agent.updatedAt,
     };

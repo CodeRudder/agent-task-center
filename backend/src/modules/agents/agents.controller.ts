@@ -3,12 +3,16 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { AgentsService } from './agents.service';
+import { ApiTokenService } from './services/api-token.service';
 import {
   CreateAgentDto,
   UpdateAgentDto,
@@ -19,7 +23,10 @@ import {
 
 @Controller('agents')
 export class AgentsController {
-  constructor(private readonly agentsService: AgentsService) {}
+  constructor(
+    private readonly agentsService: AgentsService,
+    private readonly apiTokenService: ApiTokenService,
+  ) {}
 
   @Get()
   async findAll(
@@ -66,6 +73,72 @@ export class AgentsController {
     return {
       success: true,
       data: result,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // V5: API Token管理端点
+
+  @Post(':id/api-token')
+  async generateApiToken(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{
+    success: boolean;
+    data: { apiToken: string; expiresAt: string };
+    message: string;
+    timestamp: string;
+  }> {
+    const apiToken = await this.apiTokenService.generateApiToken(id);
+    const agent = await this.agentsService.findOne(id);
+    
+    return {
+      success: true,
+      data: {
+        apiToken,
+        expiresAt: agent.apiTokenExpiresAt.toISOString(),
+      },
+      message: 'API Token generated successfully',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Delete(':id/api-token')
+  @HttpCode(HttpStatus.OK)
+  async revokeApiToken(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    timestamp: string;
+  }> {
+    await this.apiTokenService.revokeApiToken(id);
+    
+    return {
+      success: true,
+      message: 'API Token revoked successfully',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/api-token/regenerate')
+  async regenerateApiToken(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{
+    success: boolean;
+    data: { apiToken: string; expiresAt: string };
+    message: string;
+    timestamp: string;
+  }> {
+    const apiToken = await this.apiTokenService.regenerateApiToken(id);
+    const agent = await this.agentsService.findOne(id);
+    
+    return {
+      success: true,
+      data: {
+        apiToken,
+        expiresAt: agent.apiTokenExpiresAt.toISOString(),
+      },
+      message: 'API Token regenerated successfully',
       timestamp: new Date().toISOString(),
     };
   }

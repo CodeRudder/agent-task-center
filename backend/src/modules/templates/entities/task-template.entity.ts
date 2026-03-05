@@ -10,7 +10,6 @@ import {
   Index,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { TaskPriority } from '../../task/entities/task.entity';
 
 export enum TemplateCategory {
   DEVELOPMENT = 'development',
@@ -18,6 +17,13 @@ export enum TemplateCategory {
   MARKETING = 'marketing',
   OPERATIONS = 'operations',
   GENERAL = 'general',
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent',
 }
 
 @Entity('task_templates')
@@ -68,20 +74,20 @@ export class TaskTemplate {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column()
+  @Column({ name: 'created_by' })
   @Index()
   createdById: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'createdById' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @DeleteDateColumn()
+  @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 }

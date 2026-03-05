@@ -1,80 +1,106 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
-
-export interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  userId: string;
-  read: boolean;
-  createdAt: Date;
-}
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Notification } from './entities/notification.entity';
+import { QueryNotificationDto } from './dto/notification.dto';
 
 @Injectable()
 export class NotificationService {
-  private redis: Redis;
+  constructor(
+    @InjectRepository(Notification)
+    private notificationRepository: Repository<Notification>,
+  ) {}
 
-  constructor(private configService: ConfigService) {
-    this.redis = new Redis({
-      host: this.configService.get<string>('redis.host'),
-      port: this.configService.get<number>('redis.port'),
-      password: this.configService.get<string>('redis.password'),
+  // New method for Phase 2-B API
+  async findByAgent(
+    agentId: string,
+    query: QueryNotificationDto,
+  ): Promise<{ items: Notification[]; total: number; unreadCount: number }> {
+    const { page = 1, pageSize = 20, readStatus } = query;
+
+    const queryBuilder = this.notificationRepository
+      .createQueryBuilder('notification')
+      .where('notification.agentId = :agentId', { agentId })
+      .orderBy('notification.createdAt', 'DESC');
+
+    // Filter by read status
+    if (readStatus === 'true') {
+      queryBuilder.andWhere('notification.read = :read', { read: true });
+    } else if (readStatus === 'false') {
+      queryBuilder.andWhere('notification.read = :read', { read: false });
+    }
+
+    // Get total count
+    const total = await queryBuilder.getCount();
+
+    // Get unread count
+    const unreadCount = await this.notificationRepository.count({
+      where: { agentId, read: false },
+    });
+
+    // Get paginated items
+    const items = await queryBuilder
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getMany();
+
+    return { items, total, unreadCount };
+  }
+
+  // Legacy method for backward compatibility with agent-notifications.controller
+  async getNotifications(
+    agentId: string,
+    limit: number = 20,
+  ): Promise<Notification[]> {
+    return this.notificationRepository.find({
+      where: { agentId },
+      order: { createdAt: 'DESC' },
+      take: limit,
     });
   }
 
-  async createNotification(
-    userId: string,
+  // New method for Phase 2-B API
+  async markAsRead(id: string, agentId: string): Promise<Notification> {
+    const notification = await this.notificationRepository.findOne({
+      where: { id },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('通知不存在');
+    }
+
+    // Verify ownership
+    if (notification.agentId !== agentId) {
+      throw new ForbiddenException('无权操作此通知');
+    }
+
+    notification.read = true;
+    return this.notificationRepository.save(notification);
+  }
+
+  async markAllAsRead(agentId: string): Promise<void> {
+    await this.notificationRepository.update(
+      { agentId, read: false },
+      { read: true },
+    );
+  }
+
+  async create(
+    agentId: string,
     type: string,
     title: string,
-    message: string,
+    content: string,
+    data?: Record<string, any>,
   ): Promise<Notification> {
-    const notification: Notification = {
-      id: this.generateId(),
+    const notification = this.notificationRepository.create({
+      agentId,
       type,
       title,
-      message,
-      userId,
+      content,
+      data,
       read: false,
-      createdAt: new Date(),
-    };
+    });
 
-    // Store in Redis with 7 days TTL
-    const key = `notifications:${userId}`;
-    await this.redis.lpush(key, JSON.stringify(notification));
-    await this.redis.expire(key, 7 * 24 * 60 * 60);
-
-    return notification;
-  }
-
-  async getNotifications(
-    userId: string,
-    limit: number = 20,
-  ): Promise<Notification[]> {
-    const key = `notifications:${userId}`;
-    const notifications = await this.redis.lrange(key, 0, limit - 1);
-
-    return notifications.map((n) => JSON.parse(n));
-  }
-
-  async markAsRead(userId: string, notificationId: string): Promise<void> {
-    const key = `notifications:${userId}`;
-    const notifications = await this.getNotifications(userId);
-
-    const index = notifications.findIndex((n) => n.id === notificationId);
-    if (index !== -1) {
-      notifications[index].read = true;
-      await this.redis.lset(key, index, JSON.stringify(notifications[index]));
-    }
-  }
-
-  async getUnreadCount(userId: string): Promise<number> {
-    const notifications = await this.getNotifications(userId);
-    return notifications.filter((n) => !n.read).length;
-  }
-
-  private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return this.notificationRepository.save(notification);
   }
 }

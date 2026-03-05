@@ -142,6 +142,8 @@ describe('TemplatesController', () => {
         parentId: null,
         metadata: { templateId: mockTemplateId },
         version: 1,
+        templateId: mockTemplateId,
+        template: null as any,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,

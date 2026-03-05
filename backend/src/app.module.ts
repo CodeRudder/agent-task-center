@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { TaskModule } from './modules/task/task.module';
+import { CommentModule } from './modules/comment/comment.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { AgentsModule } from './modules/agents/agents.module';
 import { TemplatesModule } from './modules/templates/templates.module';
@@ -28,7 +29,7 @@ import { jwtConfig } from './config/jwt.config';
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-load: [appConfig, databaseConfig, redisConfig, jwtConfig],
+      load: [appConfig, databaseConfig, redisConfig, jwtConfig],
       envFilePath: ['../.env', '.env'],
     }),
 
@@ -50,11 +51,11 @@ load: [appConfig, databaseConfig, redisConfig, jwtConfig],
       inject: [ConfigService],
     }),
 
-    // Rate Limiting
+    // Rate Limiting - 10 requests per minute
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,
-        limit: 100,
+        ttl: 60000, // 1 minute in milliseconds
+        limit: 10, // 10 requests per minute
       },
     ]),
 
@@ -62,6 +63,7 @@ load: [appConfig, databaseConfig, redisConfig, jwtConfig],
     AuthModule,
     UserModule,
     TaskModule,
+    CommentModule,
     NotificationModule,
     AgentsModule,
     TemplatesModule,
@@ -81,6 +83,11 @@ load: [appConfig, databaseConfig, redisConfig, jwtConfig],
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    // Global Guards - Rate Limiting
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

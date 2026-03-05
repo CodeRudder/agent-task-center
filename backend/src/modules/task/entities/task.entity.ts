@@ -10,6 +10,7 @@ import {
   VersionColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import { TaskTemplate } from '../../templates/entities/task-template.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -68,6 +69,13 @@ export class Task {
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
+
+  @Column({ nullable: true })
+  templateId: string;
+
+  @ManyToOne(() => TaskTemplate)
+  @JoinColumn({ name: 'templateId' })
+  template: TaskTemplate;
 
   @VersionColumn()
   version: number;

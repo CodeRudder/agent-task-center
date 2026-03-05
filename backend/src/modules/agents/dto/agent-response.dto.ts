@@ -1,4 +1,4 @@
-import { AgentStatus, AgentType } from '../entities/agent.entity';
+import { AgentStatus, AgentType, AgentRole } from '../entities/agent.entity';
 
 export class AgentLoadDto {
   currentTasks: number;
@@ -22,6 +22,13 @@ export class AgentResponseDto {
   type: AgentType;
   status: AgentStatus;
   maxConcurrentTasks: number;
+  
+  // V5: API Token相关字段
+  apiToken?: string;
+  apiTokenExpiresAt?: Date;
+  lastApiAccessAt?: Date;
+  role?: AgentRole;
+  
   createdAt: Date;
   updatedAt: Date;
   

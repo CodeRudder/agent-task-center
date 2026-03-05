@@ -41,6 +41,8 @@ describe('TemplatesService', () => {
     status: TaskStatus.TODO,
     priority: TaskPriority.MEDIUM,
     progress: 0,
+    templateId: mockTemplateId,
+    template: null as any,
     dueDate: null,
     assigneeId: mockUserId,
     assignee: null as any,
