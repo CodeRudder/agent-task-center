@@ -6,7 +6,8 @@ export class CreateNotificationsTable1709747400000 implements MigrationInterface
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. 创建notifications表
     await queryRunner.createTable(
-      new Table('notifications', {
+      new Table({
+        name: 'notifications',
         columns: [
           {
             name: 'id',
@@ -52,7 +53,7 @@ export class CreateNotificationsTable1709747400000 implements MigrationInterface
             type: 'timestamp',
             default: 'now()',
           },
-        ],
+      },
       }),
       true,
     );
