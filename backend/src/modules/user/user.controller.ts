@@ -10,7 +10,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
-  async getCurrentUser(@Request() req): Promise<User> {
+  async getCurrentUser(@Request() req: any): Promise<User> {
     return this.userService.findById(req.user.id);
   }
 

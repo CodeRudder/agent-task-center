@@ -1,136 +1,302 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
 import { Agent, AgentStatus } from './entities/agent.entity';
-import {
-  CreateAgentDto,
-  UpdateAgentDto,
-  QueryAgentDto,
-  AgentResponseDto,
-  AgentListResponseDto,
-  AgentLoadDto,
-  AgentStatisticsDto,
-} from './dto';
+import { AgentStats, PeriodType } from './entities/agent-stats.entity';
+import { CreateAgentDto, UpdateAgentDto, QueryAgentDto, AgentLoadDto, AgentStatisticsDto } from './dto/agent.dto';
+import { Task } from '../task/entities/task.entity';
+import { TaskStatus } from '../task/entities/task.entity';
 
 @Injectable()
 export class AgentsService {
   constructor(
     @InjectRepository(Agent)
     private agentRepository: Repository<Agent>,
+    @InjectRepository(AgentStats)
+    private agentStatsRepository: Repository<AgentStats>,
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
   ) {}
 
-  async create(createAgentDto: CreateAgentDto): Promise<AgentResponseDto> {
+  async create(createAgentDto: CreateAgentDto, userId: string): Promise<Agent> {
     const agent = this.agentRepository.create({
       ...createAgentDto,
-      apiToken: `agent_${uuidv4()}`,
-      status: AgentStatus.OFFLINE,
+      createdBy: userId,
+      apiToken: `at_${Buffer.from(Math.random().toString()).toString('base64')}`,
     });
 
-    const saved = await this.agentRepository.save(agent);
-    return this.toResponseDto(saved);
+    return this.agentRepository.save(agent);
   }
 
-  async findAll(query: QueryAgentDto): Promise<AgentListResponseDto> {
-    const { page = 1, limit = 10, status, type, search } = query;
+  async findAll(query: QueryAgentDto): Promise<{ items: any[]; pagination: any }> {
+    const {
+      status,
+      type,
+      search,
+      capabilities,
+      sortBy = 'name',
+      order = 'asc',
+      page = 1,
+      pageSize = 20,
+    } = query;
 
-    const qb = this.agentRepository.createQueryBuilder('agent');
+    const queryBuilder = this.agentRepository
+      .createQueryBuilder('agent')
+      .where('agent.deletedAt IS NULL');
 
     if (status) {
-      qb.andWhere('agent.status = :status', { status });
+      queryBuilder.andWhere('agent.status = :status', { status });
     }
 
     if (type) {
-      qb.andWhere('agent.type = :type', { type });
+      queryBuilder.andWhere('agent.type = :type', { type });
     }
 
     if (search) {
-      qb.andWhere(
+      queryBuilder.andWhere(
         '(agent.name ILIKE :search OR agent.description ILIKE :search)',
-        { search: `%${search}%` },
+        { search: `%${search}%` }
       );
     }
 
-    qb.orderBy('agent.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    if (capabilities) {
+      const capabilityArray = capabilities.split(',').map((c) => c.trim());
+      capabilityArray.forEach((capability, index) => {
+        queryBuilder.andWhere(`${index === 0 ? 'agent.capabilities' : 'agent.capategies'} @> :capability${index}`, {
+          [`capability${index}`]: JSON.stringify([capability]),
+        });
+      });
+    }
 
-    const [items, total] = await qb.getManyAndCount();
+    // Sorting
+    if (sortBy === 'name') {
+      queryBuilder.orderBy('agent.name', order.toUpperCase() as 'ASC' | 'DESC');
+    } else if (sortBy === 'load') {
+      // Will be sorted after loading
+      queryBuilder.orderBy('agent.name', 'ASC');
+    } else if (sortBy === 'success_rate') {
+      // Will be sorted after loading
+      queryBuilder.orderBy('agent.name', 'ASC');
+    }
+
+    queryBuilder
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
+
+    const [agents, total] = await queryBuilder.getManyAndCount();
+
+    // Enrich agents with load and statistics
+    const enrichedAgents = await Promise.all(
+      agents.map(async (agent) => {
+        const load = await this.calculateAgentLoad(agent.id);
+        const statistics = await this.getAgentStatistics(agent.id, PeriodType.ALL_TIME);
+        const lastActiveAt = await this.getLastActiveAt(agent.id);
+
+        return {
+          id: agent.id,
+          name: agent.name,
+          type: agent.type,
+          description: agent.description,
+          capabilities: agent.capabilities || [],
+          status: agent.status,
+          maxConcurrentTasks: agent.maxConcurrentTasks,
+          load,
+          statistics,
+          lastActiveAt,
+          createdAt: agent.createdAt,
+          updatedAt: agent.updatedAt,
+        };
+      })
+    );
+
+    // Sort by load or success_rate if needed
+    if (sortBy === 'load') {
+      enrichedAgents.sort((a, b) => {
+        return order === 'asc'
+          ? a.load.loadPercentage - b.load.loadPercentage
+          : b.load.loadPercentage - a.load.loadPercentage;
+      });
+    } else if (sortBy === 'success_rate') {
+      enrichedAgents.sort((a, b) => {
+        return order === 'asc'
+          ? a.statistics.successRate - b.statistics.successRate
+          : b.statistics.successRate - a.statistics.successRate;
+      });
+    }
 
     return {
-      items: items.map((agent) => this.toResponseDto(agent)),
-      total,
-      page,
-      limit,
+      items: enrichedAgents,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     };
   }
 
-  async findOne(id: string): Promise<AgentResponseDto> {
-    const agent = await this.agentRepository.findOne({ where: { id } });
+  async findOne(id: string): Promise<any> {
+    const agent = await this.agentRepository.findOne({
+      where: { id },
+    });
 
     if (!agent) {
-      throw new NotFoundException(`Agent with id ${id} not found`);
+      throw new NotFoundException('Agent not found');
     }
 
-    const response = this.toResponseDto(agent);
-    
-    response.load = await this.calculateAgentLoad(id);
-    response.statistics = await this.getAgentStatistics(id);
+    const load = await this.calculateAgentLoad(agent.id);
+    const statistics = await this.getAgentStatistics(agent.id, PeriodType.ALL_TIME);
+    const currentTasks = await this.getCurrentTasks(agent.id);
+    const recentHistory = await this.getRecentHistory(agent.id);
+    const lastActiveAt = await this.getLastActiveAt(agent.id);
 
-    return response;
-  }
-
-  async update(
-    id: string,
-    updateAgentDto: UpdateAgentDto,
-  ): Promise<AgentResponseDto> {
-    const agent = await this.agentRepository.findOne({ where: { id } });
-
-    if (!agent) {
-      throw new NotFoundException(`Agent with id ${id} not found`);
-    }
-
-    Object.assign(agent, updateAgentDto);
-    const saved = await this.agentRepository.save(agent);
-
-    return this.toResponseDto(saved);
-  }
-
-  private toResponseDto(agent: Agent): AgentResponseDto {
     return {
       id: agent.id,
       name: agent.name,
       type: agent.type,
+      description: agent.description,
+      capabilities: agent.capabilities || [],
       status: agent.status,
       maxConcurrentTasks: agent.maxConcurrentTasks,
-      apiToken: agent.apiToken,
-      apiTokenExpiresAt: agent.apiTokenExpiresAt,
-      lastApiAccessAt: agent.lastApiAccessAt,
-      role: agent.role,
+      load: {
+        currentTasks: load.currentTasks,
+        loadPercentage: load.loadPercentage,
+      },
+      currentTasks,
+      statistics: {
+        allTime: statistics,
+        thisMonth: await this.getAgentStatistics(agent.id, PeriodType.MONTH),
+      },
+      recentHistory,
       createdAt: agent.createdAt,
-      updatedAt: agent.updatedAt,
+      lastActiveAt,
     };
+  }
+
+  async update(id: string, updateAgentDto: UpdateAgentDto): Promise<Agent> {
+    const agent = await this.agentRepository.findOne({ where: { id } });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    Object.assign(agent, updateAgentDto);
+
+    return this.agentRepository.save(agent);
   }
 
   private async calculateAgentLoad(agentId: string): Promise<AgentLoadDto> {
+    const tasks = await this.taskRepository
+      .createQueryBuilder('task')
+      .where('task.assigneeId = :agentId', { agentId })
+      .andWhere('task.deletedAt IS NULL')
+      .andWhere('task.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [TaskStatus.DONE, TaskStatus.REVIEW],
+      })
+      .getMany();
+
+    const inProgressTasks = tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length;
+    const pendingTasks = tasks.filter((t) => t.status === TaskStatus.TODO).length;
+    const currentTasks = tasks.length;
+
+    const agent = await this.agentRepository.findOne({ where: { id: agentId } });
+    const maxConcurrent = agent?.maxConcurrentTasks || 5;
+    const loadPercentage = Math.round((currentTasks / maxConcurrent) * 100);
+
     return {
-      currentTasks: 0,
-      maxConcurrentTasks: 5,
-      loadPercentage: 0,
-      status: AgentStatus.OFFLINE,
+      currentTasks,
+      inProgressTasks,
+      pendingTasks,
+      loadPercentage,
+      isOverloaded: loadPercentage > 80,
     };
   }
 
-  private async getAgentStatistics(
-    agentId: string,
-  ): Promise<AgentStatisticsDto> {
+  private async getAgentStatistics(agentId: string, period: PeriodType): Promise<AgentStatisticsDto> {
+    const stats = await this.agentStatsRepository.findOne({
+      where: {
+        agentId,
+        periodType: period,
+      },
+      order: {
+        calculatedAt: 'DESC',
+      },
+    });
+
+    if (!stats) {
+      return {
+        totalTasks: 0,
+        completedTasks: 0,
+        successRate: 0,
+        avgCompletionTime: 0,
+      };
+    }
+
+    const successRate =
+      stats.totalTasks > 0
+        ? Math.round((stats.acceptedTasks / stats.totalTasks) * 100)
+        : 0;
+
     return {
-      totalTasks: 0,
-      completedTasks: 0,
-      acceptedTasks: 0,
-      rejectedTasks: 0,
-      avgCompletionTime: 0,
-      successRate: 0,
+      totalTasks: stats.totalTasks,
+      completedTasks: stats.completedTasks,
+      successRate,
+      avgCompletionTime: Number(stats.avgCompletionTimeHours),
     };
+  }
+
+  private async getCurrentTasks(agentId: string): Promise<any[]> {
+    const tasks = await this.taskRepository
+      .createQueryBuilder('task')
+      .where('task.assigneeId = :agentId', { agentId })
+      .andWhere('task.deletedAt IS NULL')
+      .andWhere('task.status IN (:...activeStatuses)', {
+        activeStatuses: [TaskStatus.TODO, TaskStatus.IN_PROGRESS],
+      })
+      .orderBy('task.priority', 'DESC')
+      .addOrderBy('task.dueDate', 'ASC')
+      .limit(10)
+      .getMany();
+
+    return tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      progress: task.progress,
+      priority: task.priority,
+      dueDate: task.dueDate,
+    }));
+  }
+
+  private async getRecentHistory(agentId: string): Promise<any[]> {
+    const tasks = await this.taskRepository
+      .createQueryBuilder('task')
+      .where('task.assigneeId = :agentId', { agentId })
+      .andWhere('task.deletedAt IS NULL')
+      .andWhere('task.status IN (:...completedStatuses)', {
+        completedStatuses: [TaskStatus.DONE, TaskStatus.REVIEW],
+      })
+      .orderBy('task.updatedAt', 'DESC')
+      .limit(5)
+      .getMany();
+
+    return tasks.map((task) => ({
+      taskId: task.id,
+      title: task.title,
+      status: task.status,
+      completedAt: task.updatedAt,
+      duration: 0, // Would calculate from started_at to completed_at
+    }));
+  }
+
+  private async getLastActiveAt(agentId: string): Promise<Date> {
+    const lastTask = await this.taskRepository
+      .createQueryBuilder('task')
+      .where('task.assigneeId = :agentId', { agentId })
+      .andWhere('task.deletedAt IS NULL')
+      .orderBy('task.updatedAt', 'DESC')
+      .getOne();
+
+    return lastTask?.updatedAt || new Date();
   }
 }

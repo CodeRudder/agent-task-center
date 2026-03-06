@@ -2,61 +2,83 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Agent } from './agent.entity';
 
 export enum PeriodType {
-  DAY = 'DAY',
-  WEEK = 'WEEK',
-  MONTH = 'MONTH',
-  ALL_TIME = 'ALL_TIME',
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+  ALL_TIME = 'all_time',
 }
 
 @Entity('agent_stats')
+@Index(['agentId', 'periodType', 'periodStart'], { unique: true })
 export class AgentStats {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'agent_id', type: 'uuid' })
   agentId: string;
 
-  @ManyToOne(() => Agent)
-  @JoinColumn({ name: 'agentId' })
+  @ManyToOne(() => Agent, (agent) => agent.statistics, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'agent_id' })
   agent: Agent;
 
+  @Column({ name: 'total_tasks', type: 'int', default: 0 })
+  totalTasks: number;
+
+  @Column({ name: 'completed_tasks', type: 'int', default: 0 })
+  completedTasks: number;
+
+  @Column({ name: 'accepted_tasks', type: 'int', default: 0 })
+  acceptedTasks: number;
+
+  @Column({ name: 'rejected_tasks', type: 'int', default: 0 })
+  rejectedTasks: number;
+
+  @Column({ 
+    name: 'avg_completion_time_hours', 
+    type: 'decimal', 
+    precision: 10, 
+    scale: 2, 
+    default: 0 
+  })
+  avgCompletionTimeHours: number;
+
+  @Column({ 
+    name: 'on_time_rate', 
+    type: 'decimal', 
+    precision: 5, 
+    scale: 2, 
+    default: 0 
+  })
+  onTimeRate: number;
+
   @Column({
+    name: 'period_type',
     type: 'enum',
     enum: PeriodType,
   })
   periodType: PeriodType;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'period_start', type: 'date' })
   periodStart: Date;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'period_end', type: 'date' })
   periodEnd: Date;
 
-  @Column({ default: 0 })
-  totalTasks: number;
+  @Column({ name: 'calculated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  calculatedAt: Date;
 
-  @Column({ default: 0 })
-  completedTasks: number;
-
-  @Column({ default: 0 })
-  acceptedTasks: number;
-
-  @Column({ default: 0 })
-  rejectedTasks: number;
-
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  avgCompletionTime: number;
-
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  successRate: number;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

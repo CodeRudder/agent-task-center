@@ -3,78 +3,68 @@ import {
   Get,
   Post,
   Body,
+  Patch,
   Param,
-  Query,
+  Delete,
   Request,
-  UseGuards,
-  ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CommentService } from './comment.service';
-import { CreateCommentDto, QueryCommentsDto } from './dto/comment.dto';
-import { ApiTokenGuard } from '../auth/guards/api-token.guard';
-import { PermissionsGuard } from '../auth/guards/permissions.guard';
-import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
+import { Comment } from './entities/comment.entity';
 
 @ApiTags('comments')
 @ApiBearerAuth()
-@Controller('tasks')
-@UseGuards(ApiTokenGuard, PermissionsGuard)
+@Controller('comments')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  @Post(':taskId/comments')
-  @RequirePermissions('comment:create')
-  @ApiOperation({ summary: 'Add a comment to a task' })
-  @ApiResponse({ status: 201, description: '评论添加成功' })
-  @ApiResponse({ status: 401, description: '未授权' })
-  @ApiResponse({ status: 403, description: '权限不足' })
-  async addComment(
-    @Param('taskId', new ParseUUIDPipe()) taskId: string,
+  @Post('task/:taskId')
+  @ApiOperation({ summary: 'Create a comment for a task' })
+  async create(
+    @Param('taskId') taskId: string,
     @Body() createCommentDto: CreateCommentDto,
-    @Request() req,
-  ) {
-    // Ensure taskId from URL matches taskId in body
-    createCommentDto.taskId = taskId;
-    
-    const comment = await this.commentService.create(
-      createCommentDto,
-      req.user.id,
-    );
-    
-    return {
-      success: true,
-      data: comment,
-      message: '评论添加成功',
-      timestamp: new Date().toISOString(),
-    };
+    @Request() req: any,
+  ): Promise<Comment> {
+    return this.commentService.create(taskId, req.user.id, createCommentDto);
   }
 
-  @Get(':taskId/comments')
-  @RequirePermissions('comment:read')
-  @ApiOperation({ summary: 'Get comments for a task' })
-  @ApiResponse({ status: 200, description: '返回评论列表' })
-  @ApiResponse({ status: 401, description: '未授权' })
-  @ApiResponse({ status: 403, description: '权限不足' })
-  async getComments(
-    @Param('taskId', new ParseUUIDPipe()) taskId: string,
-    @Query() query: QueryCommentsDto,
-    @Request() req,
-  ) {
-    const result = await this.commentService.findByTask(taskId, {
-      page: query.page,
-      pageSize: query.pageSize,
-    });
+  @Get('task/:taskId')
+  @ApiOperation({ summary: 'Get all comments for a task' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  async findAllByTask(
+    @Param('taskId') taskId: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ): Promise<{ items: Comment[]; total: number }> {
+    return this.commentService.findAllByTask(
+      taskId,
+      page ? Number(page) : 1,
+      pageSize ? Number(pageSize) : 20,
+    );
+  }
 
-    return {
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString(),
-    };
+  @Get(':id')
+  @ApiOperation({ summary: 'Get comment by ID' })
+  async findOne(@Param('id') id: string): Promise<Comment> {
+    return this.commentService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update comment' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateCommentDto: UpdateCommentDto,
+    @Request() req: any,
+  ): Promise<Comment> {
+    return this.commentService.update(id, req.user.id, updateCommentDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete comment' })
+  async remove(@Param('id') id: string, @Request() req: any): Promise<void> {
+    return this.commentService.remove(id, req.user.id);
   }
 }

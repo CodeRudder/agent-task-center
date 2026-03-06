@@ -1,19 +1,14 @@
-import { Module, Global } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { AgentAuthController } from './agent-auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-import { ApiTokenGuard } from './guards/api-token.guard';
-import { PermissionsGuard } from './guards/permissions.guard';
 import { User } from '../user/entities/user.entity';
-import { AgentsModule } from '../agents/agents.module';
 
-@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
@@ -28,10 +23,9 @@ import { AgentsModule } from '../agents/agents.module';
       }),
       inject: [ConfigService],
     }),
-    AgentsModule,
   ],
-  controllers: [AuthController, AgentAuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, ApiTokenGuard, PermissionsGuard],
-  exports: [AuthService, JwtModule, ApiTokenGuard, PermissionsGuard],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, LocalStrategy],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

@@ -18,32 +18,31 @@ export class Comment {
   @Column({ type: 'text' })
   content: string;
 
-  @Column()
+  @Column({ name: 'task_id' })
   taskId: string;
 
-  @ManyToOne(() => Task)
-  @JoinColumn({ name: 'taskId' })
+  @ManyToOne(() => Task, (task) => task.comments)
+  @JoinColumn({ name: 'task_id' })
   task: Task;
 
-  @Column()
+  @Column({ name: 'author_id' })
   authorId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'authorId' })
+  @JoinColumn({ name: 'author_id' })
   author: User;
 
-  @Column({ type: 'jsonb', nullable: true })
-  mentions: Array<{
-    userId: string;
-    position?: {
-      start: number;
-      end: number;
-    };
-  }>;
+  @Column({ 
+    name: 'author_type', 
+    type: 'varchar', 
+    length: '20',
+    default: 'user'
+  })
+  authorType: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

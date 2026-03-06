@@ -1,55 +1,19 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-
-export const PERMISSIONS_KEY = 'permissions';
-
-// 角色权限映射
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  admin_agent: [
-    'task:create',
-    'task:read',
-    'task:update',
-    'task:delete',
-    'agent:create',
-    'agent:read',
-    'agent:update',
-    'agent:delete',
-    'comment:create',
-    'comment:read',
-    'notification:read',
-  ],
-  worker_agent: [
-    'task:create',
-    'task:read',
-    'task:update',
-    'comment:create',
-    'comment:read',
-    'notification:read',
-  ],
-  readonly_agent: [
-    'task:read',
-    'comment:read',
-    'notification:read',
-  ],
-};
+import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
-      PERMISSIONS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride(PERMISSIONS_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiredPermissions) {
-      return true; // 无权限要求
+      return true;
     }
 
     const request = context.switchToHttp().getRequest();
@@ -59,14 +23,43 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('User role not found');
     }
 
-    // TODO: 临时修复 - admin用户跳过权限检查
-    // 完整的RBAC权限系统将在后续版本实现
     if (user.role === 'admin') {
       return true;
     }
 
+    const ROLE_PERMISSIONS: Record<string, string[]> = {
+      admin_agent: [
+        'task:create',
+        'task:read',
+        'task:update',
+        'task:delete',
+        'agent:create',
+        'agent:read',
+        'agent:update',
+        'agent:delete',
+        'comment:create',
+        'comment:read',
+        'notification:read',
+        'notification:push',
+      ],
+      worker_agent: [
+        'task:create',
+        'task:read',
+        'task:update',
+        'comment:create',
+        'comment:read',
+        'notification:read',
+        'notification:push',
+      ],
+      readonly_agent: [
+        'task:read',
+        'comment:read',
+        'notification:read',
+      ],
+    };
+
     const userPermissions = ROLE_PERMISSIONS[user.role] || [];
-    const hasPermission = requiredPermissions.every((permission) =>
+    const hasPermission = requiredPermissions.every((permission: string) =>
       userPermissions.includes(permission),
     );
 

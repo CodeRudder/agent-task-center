@@ -29,11 +29,16 @@ export class User {
   @Column({ default: 'user' })
   role: string;
 
+  @Column({ nullable: true })
+  feishuOpenId: string;
+
   @Column({ default: true })
   isActive: boolean;
 
   @OneToMany(() => Task, (task) => task.assignee)
   tasks: Task[];
+
+  notifications: any[]; // For type compatibility
 
   @CreateDateColumn()
   createdAt: Date;

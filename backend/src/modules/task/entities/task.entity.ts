@@ -6,11 +6,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   VersionColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { TaskTemplate } from '../../templates/entities/task-template.entity';
+import { Comment } from '../../comment/entities/comment.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -55,7 +56,7 @@ export class Task {
   progress: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  dueDate: Date;
+  dueDate: Date | null;
 
   @Column({ nullable: true })
   assigneeId: string;
@@ -64,28 +65,31 @@ export class Task {
   @JoinColumn({ name: 'assigneeId' })
   assignee: User;
 
+  @Column({ name: 'creator_id' })
+  creatorId: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'creator_id' })
+  creator: User;
+
+  @OneToMany(() => Comment, (comment) => comment.task)
+  comments: Comment[];
+
   @Column({ nullable: true })
   parentId: string;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
-  @Column({ nullable: true })
-  templateId: string;
-
-  @ManyToOne(() => TaskTemplate)
-  @JoinColumn({ name: 'templateId' })
-  template: TaskTemplate;
-
   @VersionColumn()
   version: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updatedAt' })
   updatedAt: Date;
 
-  @DeleteDateColumn()
-  deletedAt: Date;
+  @DeleteDateColumn({ name: 'deletedAt' })
+  deletedAt: Date | null;
 }

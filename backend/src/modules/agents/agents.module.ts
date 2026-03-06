@@ -2,15 +2,14 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentsController } from './agents.controller';
 import { AgentsService } from './agents.service';
-import { ApiTokenService } from './services/api-token.service';
 import { Agent } from './entities/agent.entity';
 import { AgentStats } from './entities/agent-stats.entity';
-import { ApiAccessLog } from './entities/api-access-log.entity';
+import { Task } from '../task/entities/task.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Agent, AgentStats, ApiAccessLog])],
+  imports: [TypeOrmModule.forFeature([Agent, AgentStats, Task])],
   controllers: [AgentsController],
-  providers: [AgentsService, ApiTokenService],
-  exports: [AgentsService, ApiTokenService],
+  providers: [AgentsService],
+  exports: [AgentsService],
 })
 export class AgentsModule {}

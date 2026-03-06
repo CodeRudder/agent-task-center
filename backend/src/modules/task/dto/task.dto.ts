@@ -7,18 +7,21 @@ import {
   Max,
   IsDateString,
   IsUUID,
+  Length,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority } from '../entities/task.entity';
 
 export class CreateTaskDto {
-  @ApiProperty({ example: 'Implement user authentication' })
+  @ApiProperty({ example: 'Implement user authentication', minLength: 1, maxLength: 100 })
   @IsString()
+  @Length(1, 100, { message: 'Title must be between 1 and 100 characters' })
   title: string;
 
-  @ApiPropertyOptional({ example: 'Detailed description...' })
+  @ApiPropertyOptional({ example: 'Detailed description...', maxLength: 2000 })
   @IsOptional()
   @IsString()
+  @Length(0, 2000, { message: 'Description must be between 0 and 2000 characters' })
   description?: string;
 
   @ApiPropertyOptional({ enum: TaskStatus, default: TaskStatus.TODO })
@@ -45,17 +48,26 @@ export class CreateTaskDto {
   @IsOptional()
   @IsUUID()
   parentId?: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 100, default: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  progress?: number;
 }
 
 export class UpdateTaskDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ minLength: 1, maxLength: 100 })
   @IsOptional()
   @IsString()
+  @Length(1, 100, { message: 'Title must be between 1 and 100 characters' })
   title?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 2000 })
   @IsOptional()
   @IsString()
+  @Length(0, 2000, { message: 'Description must be between 0 and 2000 characters' })
   description?: string;
 
   @ApiPropertyOptional({ enum: TaskStatus })
@@ -92,34 +104,4 @@ export class UpdateProgressDto {
   @Min(0)
   @Max(100)
   progress: number;
-}
-
-export class QueryTaskDto {
-  @ApiPropertyOptional({ enum: TaskStatus })
-  @IsOptional()
-  @IsEnum(TaskStatus)
-  status?: TaskStatus;
-
-  @ApiPropertyOptional({ enum: TaskPriority })
-  @IsOptional()
-  @IsEnum(TaskPriority)
-  priority?: TaskPriority;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUUID()
-  assigneeId?: string;
-
-  @ApiPropertyOptional({ minimum: 1, default: 1 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  pageSize?: number;
 }

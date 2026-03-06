@@ -4,45 +4,47 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  OneToMany,
   Index,
 } from 'typeorm';
+import { AgentStats } from './agent-stats.entity';
 
 export enum AgentStatus {
-  ONLINE = 'ONLINE',
-  OFFLINE = 'OFFLINE',
-  BUSY = 'BUSY',
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  BUSY = 'busy',
 }
 
 export enum AgentType {
-  DEVELOPER = 'DEVELOPER',
-  DESIGNER = 'DESIGNER',
-  QA = 'QA',
-  ARCHITECT = 'ARCHITECT',
-  PM = 'PM',
-  DEVOPS = 'DEVOPS',
-}
-
-export enum AgentRole {
-  ADMIN = 'admin_agent',
-  WORKER = 'worker_agent',
-  READONLY = 'readonly_agent',
+  DEVELOPER = 'developer',
+  DESIGNER = 'designer',
+  QA = 'qa',
+  ARCHITECT = 'architect',
+  PM = 'pm',
+  DEVOPS = 'devops',
 }
 
 @Entity('agents')
-@Index(['status'])
-@Index(['type'])
 export class Agent {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 100 })
+  @Column()
   name: string;
 
   @Column({
     type: 'enum',
     enum: AgentType,
+    default: AgentType.DEVELOPER,
   })
   type: AgentType;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  capabilities: string[];
 
   @Column({
     type: 'enum',
@@ -51,35 +53,28 @@ export class Agent {
   })
   status: AgentStatus;
 
-  @Column({ default: 5, name: 'max_concurrent_tasks' })
+  @Column({ name: 'max_concurrent_tasks', type: 'int', default: 5 })
   maxConcurrentTasks: number;
 
-  // V5: API Token相关字段
-  @Column({ length: 255, unique: true, name: 'api_token', nullable: true })
+  @Column({ name: 'api_token', type: 'varchar', length: 255, unique: true, nullable: true })
   @Index()
   apiToken: string;
 
-  @Column({ length: 255, unique: true, name: 'api_token_hash', nullable: true })
-  apiTokenHash: string;
+  @Column({ type: 'jsonb', default: {} })
+  metadata: Record<string, any>;
 
-  @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
-  apiTokenExpiresAt: Date;
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy: string;
 
-  @Column({ type: 'timestamp', name: 'last_api_access_at', nullable: true })
-  lastApiAccessAt: Date;
-
-  // V5: Agent角色（用于权限控制）
-  @Column({
-    type: 'enum',
-    enum: AgentRole,
-    default: AgentRole.WORKER,
-    name: 'role',
-  })
-  role: AgentRole;
+  @OneToMany(() => AgentStats, (stats) => stats.agent)
+  statistics: AgentStats[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date;
 }
