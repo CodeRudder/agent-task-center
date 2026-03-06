@@ -18,6 +18,7 @@ export enum TaskStatus {
   IN_PROGRESS = 'in_progress',
   REVIEW = 'review',
   DONE = 'done',
+  BLOCKED = 'blocked',
 }
 
 export enum TaskPriority {
@@ -84,7 +85,23 @@ export class Task {
   @VersionColumn()
   version: number;
 
-  @CreateDateColumn({ name: 'createdAt' })
+  // Agent任务相关字段
+  @Column({ type: 'timestamp', nullable: true })
+  startedAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  completedAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  blockedAt: Date;
+
+  @Column({ type: 'text', nullable: true })
+  blockReason: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastApiCallAt: Date;
+
+  @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updatedAt' })

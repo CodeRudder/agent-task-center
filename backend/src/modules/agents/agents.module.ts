@@ -10,6 +10,13 @@ import { Task } from '../task/entities/task.entity';
 import { AdminRegenerateTokenController } from './admin/admin-regenerate-token.controller';
 import { AdminRevokeTokenController } from './admin/admin-revoke-token.controller';
 import { VerifyController } from './auth/verify.controller';
+import { GetTasksController } from './tasks/get-tasks.controller';
+import { GetTaskDetailsController } from './tasks/get-task-details.controller';
+import { UpdateProgressController } from './tasks/update-progress.controller';
+import { StartTaskController } from './tasks/start-task.controller';
+import { CompleteTaskController } from './tasks/complete-task.controller';
+import { BlockTaskController } from './tasks/block-task.controller';
+import { UnblockTaskController } from './tasks/unblock-task.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Agent, AgentStats, ApiAccessLog, Task])],
@@ -18,6 +25,13 @@ import { VerifyController } from './auth/verify.controller';
     AdminRegenerateTokenController,
     AdminRevokeTokenController,
     VerifyController,
+    GetTasksController,
+    GetTaskDetailsController,
+    UpdateProgressController,
+    StartTaskController,
+    CompleteTaskController,
+    BlockTaskController,
+    UnblockTaskController,
   ],
   providers: [AgentsService, ApiTokenService],
   exports: [AgentsService, ApiTokenService],
