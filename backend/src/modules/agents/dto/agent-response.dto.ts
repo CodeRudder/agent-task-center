@@ -22,6 +22,9 @@ export class AgentResponseDto {
   type: AgentType;
   status: AgentStatus;
   maxConcurrentTasks: number;
+  apiToken?: string;
+  tokenCreatedAt?: Date;
+  tokenExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   

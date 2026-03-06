@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { TaskService } from './task.service';
-import { CreateTaskDto, UpdateTaskDto, UpdateProgressDto } from './dto/task.dto';
+import { CreateTaskDto, UpdateTaskDto, UpdateProgressDto, AcceptTaskDto, RejectTaskDto } from './dto/task.dto';
 import { Task, TaskStatus } from './entities/task.entity';
 
 @ApiTags('tasks')
@@ -77,5 +77,27 @@ export class TaskController {
   @ApiOperation({ summary: 'Delete task' })
   async remove(@Param('id') id: string): Promise<void> {
     return this.taskService.remove(id);
+  }
+
+  @Post(':id/accept')
+  @ApiOperation({ summary: 'Accept task' })
+  async accept(
+    @Param('id') id: string,
+    @Body() acceptTaskDto: AcceptTaskDto,
+  ): Promise<Task> {
+    return this.taskService.accept(id, acceptTaskDto.comment);
+  }
+
+  @Post(':id/reject')
+  @ApiOperation({ summary: 'Reject task' })
+  async reject(
+    @Param('id') id: string,
+    @Body() rejectTaskDto: RejectTaskDto,
+  ): Promise<Task> {
+    return this.taskService.reject(
+      id,
+      rejectTaskDto.reason,
+      rejectTaskDto.requiredChanges,
+    );
   }
 }

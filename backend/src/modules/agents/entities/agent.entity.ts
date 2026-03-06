@@ -48,9 +48,15 @@ export class Agent {
   @Column({ default: 5, name: 'max_concurrent_tasks' })
   maxConcurrentTasks: number;
 
-  @Column({ length: 255, unique: true, name: 'api_token' })
+  @Column({ length: 255, unique: true, name: 'api_token', nullable: true })
   @Index()
   apiToken: string;
+
+  @Column({ type: 'timestamp', name: 'token_created_at', nullable: true })
+  tokenCreatedAt: Date;
+
+  @Column({ type: 'timestamp', name: 'token_expires_at', nullable: true })
+  tokenExpiresAt: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

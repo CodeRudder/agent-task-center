@@ -115,4 +115,49 @@ export class TaskService {
     const task = await this.findOne(id);
     await this.taskRepository.softDelete(id);
   }
+
+  async accept(id: string, comment?: string): Promise<Task> {
+    const task = await this.findOne(id);
+
+    // 只能验收已完成的任务
+    if (task.status !== TaskStatus.DONE) {
+      throw new BadRequestException('只能验收已完成的任务');
+    }
+
+    // 更新状态为已接受，并保存评论
+    task.status = TaskStatus.ACCEPTED;
+    if (comment) {
+      task.metadata = {
+        ...task.metadata,
+        acceptComment: comment,
+        acceptedAt: new Date().toISOString(),
+      };
+    }
+
+    return this.taskRepository.save(task);
+  }
+
+  async reject(
+    id: string,
+    reason: string,
+    requiredChanges?: string[],
+  ): Promise<Task> {
+    const task = await this.findOne(id);
+
+    // 只能驳回已完成的任务
+    if (task.status !== TaskStatus.DONE) {
+      throw new BadRequestException('只能驳回已完成的任务');
+    }
+
+    // 更新状态为已驳回，并保存驳回原因和要求的修改
+    task.status = TaskStatus.REJECTED;
+    task.metadata = {
+      ...task.metadata,
+      rejectReason: reason,
+      requiredChanges: requiredChanges || [],
+      rejectedAt: new Date().toISOString(),
+    };
+
+    return this.taskRepository.save(task);
+  }
 }

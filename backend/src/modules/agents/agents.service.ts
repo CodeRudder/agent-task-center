@@ -28,7 +28,7 @@ export class AgentsService {
     });
 
     const saved = await this.agentRepository.save(agent);
-    return this.toResponseDto(saved);
+    return this.toResponseDto(saved, true); // 创建时返回token
   }
 
   async findAll(query: QueryAgentDto): Promise<AgentListResponseDto> {
@@ -96,8 +96,8 @@ export class AgentsService {
     return this.toResponseDto(saved);
   }
 
-  private toResponseDto(agent: Agent): AgentResponseDto {
-    return {
+  private toResponseDto(agent: Agent, includeToken = false): AgentResponseDto {
+    const response: AgentResponseDto = {
       id: agent.id,
       name: agent.name,
       type: agent.type,
@@ -106,6 +106,15 @@ export class AgentsService {
       createdAt: agent.createdAt,
       updatedAt: agent.updatedAt,
     };
+
+    // 仅在创建时返回token，之后不再返回
+    if (includeToken && agent.apiToken) {
+      response.apiToken = agent.apiToken;
+      response.tokenCreatedAt = agent.tokenCreatedAt;
+      response.tokenExpiresAt = agent.tokenExpiresAt;
+    }
+
+    return response;
   }
 
   private async calculateAgentLoad(agentId: string): Promise<AgentLoadDto> {

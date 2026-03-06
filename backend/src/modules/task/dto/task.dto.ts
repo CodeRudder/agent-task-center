@@ -93,3 +93,21 @@ export class UpdateProgressDto {
   @Max(100)
   progress: number;
 }
+
+export class AcceptTaskDto {
+  @ApiPropertyOptional({ example: '验收意见...' })
+  @IsOptional()
+  @IsString()
+  comment?: string;
+}
+
+export class RejectTaskDto {
+  @ApiProperty({ example: '需要修改的地方...' })
+  @IsString()
+  reason: string;
+
+  @ApiPropertyOptional({ example: ['修改1', '修改2'] })
+  @IsOptional()
+  @IsString({ each: true })
+  requiredChanges?: string[];
+}
