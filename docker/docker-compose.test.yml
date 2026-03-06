@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  backend-test:
+    image: localhost:5000/agent-task-system:v1.0.0
+    container_name: agent-task-backend-test
+    restart: unless-stopped
+    ports:
+      - "3102:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_PREFIX: api/v1
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      DB_DATABASE: agent_task_test
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      JWT_SECRET: test-secret-key
+      JWT_EXPIRATION: 7d
+    networks:
+      - test-network
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend-test:
+    image: localhost:5000/agent-task-frontend:v1.0.0
+    container_name: agent-task-frontend-test
+    restart: unless-stopped
+    ports:
+      - "3103:80"
+    networks:
+      - test-network
+    depends_on:
+      backend-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: agent-task-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: agent_task_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: agent-task-redis-test
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  test-network:
