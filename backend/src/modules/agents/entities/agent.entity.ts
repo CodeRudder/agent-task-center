@@ -25,6 +25,11 @@ export enum AgentType {
   DEVOPS = 'devops',
 }
 
+export enum AgentRole {
+  ADMIN = 'admin',
+  WORKER = 'worker',
+}
+
 @Entity('agents')
 export class Agent {
   @PrimaryGeneratedColumn('uuid')
@@ -56,7 +61,7 @@ export class Agent {
   @Column({ name: 'max_concurrent_tasks', type: 'int', default: 5 })
   maxConcurrentTasks: number;
 
-  @Column({ name: 'api_token', type: 'varchar', length: 255, unique: true, nullable: true })
+  @Column({ length: 64, unique: true, name: 'api_token', nullable: true })
   @Index()
   apiToken: string;
 
@@ -65,6 +70,23 @@ export class Agent {
 
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy: string;
+
+  @Column({ type: 'timestamp', name: 'token_created_at', nullable: true })
+  tokenCreatedAt: Date;
+
+  @Column({ type: 'timestamp', name: 'last_api_call_at', nullable: true })
+  lastApiCallAt: Date;
+
+  @Column({ type: 'timestamp', name: 'last_api_access_at', nullable: true })
+  lastApiAccessAt: Date;
+
+  @Column({
+    type: 'enum',
+    enum: AgentRole,
+    default: AgentRole.WORKER,
+    name: 'role',
+  })
+  role: AgentRole;
 
   @OneToMany(() => AgentStats, (stats) => stats.agent)
   statistics: AgentStats[];

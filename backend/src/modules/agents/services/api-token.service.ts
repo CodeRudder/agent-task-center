@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Agent } from '../entities/agent.entity';
-import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import * as crypto from 'crypto';
 
 export interface ApiTokenPayload {
   agentId: string;
@@ -13,6 +12,8 @@ export interface ApiTokenPayload {
 
 @Injectable()
 export class ApiTokenService {
+  private readonly logger = new Logger(ApiTokenService.name);
+
   constructor(
     @InjectRepository(Agent)
     private agentRepository: Repository<Agent>,
@@ -20,30 +21,32 @@ export class ApiTokenService {
 
   /**
    * 生成API Token
-   * 格式: agt_<agent_id>_<random_string>
+   * 格式: at_<32位随机字符串>
    */
   async generateApiToken(agentId: string): Promise<string> {
+    this.logger.log(`Generating API token for agent ${agentId}`);
+
     const agent = await this.agentRepository.findOne({ where: { id: agentId } });
     if (!agent) {
+      this.logger.warn(`Agent ${agentId} not found`);
       throw new Error('Agent not found');
     }
 
-    // 生成随机字符串（32字节 = 64个十六进制字符）
-    const randomString = randomBytes(32).toString('hex');
-    
-    // 生成Token: agt_<agent_id>_<random>
-    const apiToken = `agt_${agentId.replace(/-/g, '')}_${randomString}`;
-    
-    // 生成Hash（bcrypt）
-    const salt = await bcrypt.genSalt(10);
-    const apiTokenHash = await bcrypt.hash(apiToken, salt);
+    // 生成32字节随机字符串（64个十六进制字符）
+    const randomString = crypto.randomBytes(32).toString('hex');
+
+    // 生成Token: at_<32位随机字符串>
+    const apiToken = `at_${randomString}`;
 
     // 更新Agent记录
     agent.apiToken = apiToken;
-    agent.apiTokenHash = apiTokenHash;
-    agent.apiTokenExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1年有效期
-    
+    agent.apiTokenHash = null; // 不再使用hash
+    agent.apiTokenExpiresAt = null; // 不使用过期时间
+    agent.tokenCreatedAt = new Date(); // 记录token创建时间
+
     await this.agentRepository.save(agent);
+
+    this.logger.log(`Successfully generated API token for agent ${agentId}`);
 
     return apiToken;
   }
@@ -52,7 +55,7 @@ export class ApiTokenService {
    * 验证API Token
    */
   async validateApiToken(apiToken: string): Promise<ApiTokenPayload | null> {
-    if (!apiToken || !apiToken.startsWith('agt_')) {
+    if (!apiToken || !apiToken.startsWith('at_')) {
       return null;
     }
 
@@ -65,19 +68,10 @@ export class ApiTokenService {
       return null;
     }
 
-    // 验证Hash
-    const isValid = await bcrypt.compare(apiToken, agent.apiTokenHash);
-    if (!isValid) {
-      return null;
-    }
-
-    // 检查过期时间
-    if (agent.apiTokenExpiresAt && agent.apiTokenExpiresAt < new Date()) {
-      return null;
-    }
-
-    // 更新最后访问时间
-    agent.lastApiAccessAt = new Date();
+    // 更新最后调用时间（同时更新两个字段以保持兼容）
+    const now = new Date();
+    agent.lastApiAccessAt = now;
+    agent.lastApiCallAt = now;
     await this.agentRepository.save(agent);
 
     return {
@@ -91,22 +85,30 @@ export class ApiTokenService {
    * 撤销API Token
    */
   async revokeApiToken(agentId: string): Promise<void> {
+    this.logger.log(`Revoking API token for agent ${agentId}`);
+
     const agent = await this.agentRepository.findOne({ where: { id: agentId } });
     if (!agent) {
+      this.logger.warn(`Agent ${agentId} not found`);
       throw new Error('Agent not found');
     }
 
     agent.apiToken = null;
     agent.apiTokenHash = null;
     agent.apiTokenExpiresAt = null;
+    agent.tokenCreatedAt = null;
+    agent.lastApiCallAt = null;
 
     await this.agentRepository.save(agent);
+
+    this.logger.log(`Successfully revoked API token for agent ${agentId}`);
   }
 
   /**
    * 重新生成API Token
    */
   async regenerateApiToken(agentId: string): Promise<string> {
+    this.logger.log(`Regenerating API token for agent ${agentId}`);
     await this.revokeApiToken(agentId);
     return this.generateApiToken(agentId);
   }
