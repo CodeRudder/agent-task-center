@@ -61,9 +61,16 @@ export class Agent {
   @Column({ name: 'max_concurrent_tasks', type: 'int', default: 5 })
   maxConcurrentTasks: number;
 
+  // V5: API Token相关字段
   @Column({ length: 64, unique: true, name: 'api_token', nullable: true })
   @Index()
   apiToken: string;
+
+  @Column({ length: 255, unique: true, name: 'api_token_hash', nullable: true })
+  apiTokenHash: string;
+
+  @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
+  apiTokenExpiresAt: Date;
 
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;
@@ -80,6 +87,7 @@ export class Agent {
   @Column({ type: 'timestamp', name: 'last_api_access_at', nullable: true })
   lastApiAccessAt: Date;
 
+  // V5: Agent角色（用于权限控制）
   @Column({
     type: 'enum',
     enum: AgentRole,
