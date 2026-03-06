@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnblockTaskController } from './unblock-task.controller';
-import { TaskService } from '../../task/task.service';
+import { UnblockTaskController } from '../../../../src/modules/agents/tasks/unblock-task.controller';
+import { TaskService } from '../../../../src/modules/task/task.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { AgentAuthGuard } from '../../../../src/modules/agents/guards/agent-auth.guard';
 
 describe('UnblockTaskController', () => {
   let controller: UnblockTaskController;
@@ -20,12 +21,11 @@ describe('UnblockTaskController', () => {
           provide: TaskService,
           useValue: mockTaskService,
         },
-        {
-          provide: AgentAuthGuard,
-          useValue: { canActivate: jest.fn(() => true) },
-        },
       ],
-    }).compile();
+    })
+    .overrideGuard(AgentAuthGuard)
+    .useValue({ canActivate: jest.fn(() => true) })
+    .compile();
 
     controller = module.get<UnblockTaskController>(UnblockTaskController);
     taskService = module.get<TaskService>(TaskService);

@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
-import { QueryNotificationDto } from './dto/notification.dto';
+import { NotificationController } from '../src/modules/notification/notification.controller';
+import { NotificationService } from '../src/modules/notification/notification.service';
+import { QueryNotificationDto } from '../src/modules/notification/dto/notification.dto';
+import { ApiTokenService } from '../src/modules/agents/services/api-token.service';
+import { JwtService } from '@nestjs/jwt';
 
 describe('NotificationController', () => {
   let controller: NotificationController;
@@ -33,6 +35,14 @@ describe('NotificationController', () => {
     create: jest.fn(),
   };
 
+  const mockApiTokenService = {
+    validateApiToken: jest.fn(),
+  };
+
+  const mockJwtService = {
+    verify: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NotificationController],
@@ -41,8 +51,21 @@ describe('NotificationController', () => {
           provide: NotificationService,
           useValue: mockService,
         },
+        {
+          provide: ApiTokenService,
+          useValue: mockApiTokenService,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(require('../src/modules/auth/guards/api-token.guard'))
+      .useValue({ canActivate: jest.fn(() => true) })
+      .overrideGuard(require('../src/modules/auth/guards/permissions.guard'))
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<NotificationController>(NotificationController);
     service = module.get<NotificationService>(NotificationService);

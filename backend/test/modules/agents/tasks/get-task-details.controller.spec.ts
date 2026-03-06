@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GetTaskDetailsController } from '../../../../src/modules/agents/tasks/get-task-details.controller';
 import { TaskService } from '../../../../src/modules/task/task.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { AgentAuthGuard } from '../../../../src/modules/agents/guards/agent-auth.guard';
 
 describe('GetTaskDetailsController', () => {
   let controller: GetTaskDetailsController;
@@ -21,7 +22,8 @@ describe('GetTaskDetailsController', () => {
         },
       ],
     })
-    .overrideGuard(/* Use a mock guard if needed */)
+    .overrideGuard(AgentAuthGuard)
+    .useValue({ canActivate: jest.fn(() => true) })
     .compile();
 
     controller = module.get<GetTaskDetailsController>(GetTaskDetailsController);

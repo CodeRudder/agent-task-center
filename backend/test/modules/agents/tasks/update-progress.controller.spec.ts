@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateProgressController } from './update-progress.controller';
-import { TaskService } from '../../task/task.service';
+import { UpdateProgressController } from '../../../../src/modules/agents/tasks/update-progress.controller';
+import { TaskService } from '../../../../src/modules/task/task.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 
 describe('UpdateProgressController', () => {
@@ -21,14 +21,6 @@ describe('UpdateProgressController', () => {
           useValue: mockTaskService,
         },
         {
-          provide: AgentAuthGuard,
-          useValue: { canActivate: jest.fn(() => true) },
-        },
-      ],
-    }).compile();
-
-    controller = module.get<UpdateProgressController>(UpdateProgressController);
-    taskService = module.get<TaskService>(TaskService);
   });
 
   afterEach(() => {

@@ -53,7 +53,7 @@ export class CreateNotificationsTable1709747400000 implements MigrationInterface
             type: 'timestamp',
             default: 'now()',
           },
-      },
+        ],
       }),
       true,
     );

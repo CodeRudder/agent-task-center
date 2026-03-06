@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CompleteTaskController } from './complete-task.controller';
-import { TaskService } from '../../task/task.service';
+import { CompleteTaskController } from '../../../../src/modules/agents/tasks/complete-task.controller';
+import { TaskService } from '../../../../src/modules/task/task.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 
 describe('CompleteTaskController', () => {
@@ -21,14 +21,6 @@ describe('CompleteTaskController', () => {
           useValue: mockTaskService,
         },
         {
-          provide: AgentAuthGuard,
-          useValue: { canActivate: jest.fn(() => true) },
-        },
-      ],
-    }).compile();
-
-    controller = module.get<CompleteTaskController>(CompleteTaskController);
-    taskService = module.get<TaskService>(TaskService);
   });
 
   afterEach(() => {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BlockTaskController } from './block-task.controller';
-import { TaskService } from '../../task/task.service';
+import { BlockTaskController } from '../../../../src/modules/agents/tasks/block-task.controller';
+import { TaskService } from '../../../../src/modules/task/task.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 
 describe('BlockTaskController', () => {
@@ -21,14 +21,6 @@ describe('BlockTaskController', () => {
           useValue: mockTaskService,
         },
         {
-          provide: AgentAuthGuard,
-          useValue: { canActivate: jest.fn(() => true) },
-        },
-      ],
-    }).compile();
-
-    controller = module.get<BlockTaskController>(BlockTaskController);
-    taskService = module.get<TaskService>(TaskService);
   });
 
   afterEach(() => {

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AgentsController } from '../../src/modules/agents/agents.controller';
 import { AgentsService } from '../../src/modules/agents/agents.service';
+import { ApiTokenService } from '../../src/modules/agents/services/api-token.service';
 import { AgentStatus, AgentType } from '../../src/modules/agents/entities/agent.entity';
 
 describe('AgentsController', () => {
@@ -16,6 +17,7 @@ describe('AgentsController', () => {
     metadata: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    apiTokenExpiresAt: new Date(),
   };
 
   const mockService = {
@@ -25,6 +27,12 @@ describe('AgentsController', () => {
     update: jest.fn().mockResolvedValue(mockAgent),
   };
 
+  const mockApiTokenService = {
+    generateApiToken: jest.fn().mockResolvedValue('at_testtoken123'),
+    revokeApiToken: jest.fn().mockResolvedValue(undefined),
+    regenerateApiToken: jest.fn().mockResolvedValue('at_newtoken456'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AgentsController],
@@ -32,6 +40,10 @@ describe('AgentsController', () => {
         {
           provide: AgentsService,
           useValue: mockService,
+        },
+        {
+          provide: ApiTokenService,
+          useValue: mockApiTokenService,
         },
       ],
     }).compile();
