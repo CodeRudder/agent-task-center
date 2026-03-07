@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend-test:
-    image: localhost:5000/agent-task-system:v5.1-p1-9
+    image: localhost:5000/agent-task-system:v5.1-p1-10
     container_name: agent-task-backend-test
     restart: unless-stopped
     ports:
