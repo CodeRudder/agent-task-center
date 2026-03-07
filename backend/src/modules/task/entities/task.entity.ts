@@ -41,15 +41,13 @@ export class Task {
   description: string;
 
   @Column({
-    type: "enum",
-    enum: TaskStatus,
+    type: "varchar",
     default: TaskStatus.TODO,
   })
   status: TaskStatus;
 
   @Column({
-    type: "enum",
-    enum: TaskPriority,
+    type: "varchar",
     default: TaskPriority.MEDIUM,
   })
   priority: TaskPriority;

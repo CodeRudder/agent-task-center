@@ -39,8 +39,7 @@ export class Agent {
   name: string;
 
   @Column({
-    type: 'enum',
-    enum: AgentType,
+    type: 'varchar',
     default: AgentType.DEVELOPER,
   })
   type: AgentType;
@@ -52,8 +51,7 @@ export class Agent {
   capabilities: string[];
 
   @Column({
-    type: 'enum',
-    enum: AgentStatus,
+    type: 'varchar',
     default: AgentStatus.OFFLINE,
   })
   status: AgentStatus;
@@ -89,8 +87,7 @@ export class Agent {
 
   // V5: Agent角色（用于权限控制）
   @Column({
-    type: 'enum',
-    enum: AgentRole,
+    type: 'varchar',
     default: AgentRole.WORKER,
     name: 'role',
   })

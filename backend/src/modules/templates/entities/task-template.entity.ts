@@ -35,16 +35,14 @@ export class TaskTemplate {
   description: string;
 
   @Column({
-    type: 'enum',
-    enum: TemplateCategory,
+    type: 'varchar',
     default: TemplateCategory.GENERAL,
   })
   @Index()
   category: TemplateCategory;
 
   @Column({
-    type: 'enum',
-    enum: TaskPriority,
+    type: 'varchar',
     default: TaskPriority.MEDIUM,
   })
   defaultPriority: TaskPriority;

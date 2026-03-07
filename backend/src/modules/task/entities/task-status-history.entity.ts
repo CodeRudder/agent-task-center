@@ -30,15 +30,13 @@ export class TaskStatusHistory {
 
   @Column({
     name: "old_status",
-    type: "enum",
-    enum: TaskStatus,
+    type: "varchar",
   })
   oldStatus: TaskStatus;
 
   @Column({
     name: "new_status",
-    type: "enum",
-    enum: TaskStatus,
+    type: "varchar",
   })
   newStatus: TaskStatus;
 
@@ -47,8 +45,7 @@ export class TaskStatusHistory {
 
   @Column({
     name: "changed_by_type",
-    type: "enum",
-    enum: ChangedByType,
+    type: "varchar",
   })
   changedByType: ChangedByType;
 
