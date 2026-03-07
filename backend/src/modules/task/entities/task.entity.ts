@@ -9,68 +9,69 @@ import {
   OneToMany,
   JoinColumn,
   VersionColumn,
-} from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Comment } from '../../comment/entities/comment.entity';
+} from "typeorm";
+import { User } from "../../user/entities/user.entity";
+import { Comment } from "../../comment/entities/comment.entity";
+import { TaskStatusHistory } from "./task-status-history.entity";
 
 export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-  BLOCKED = 'blocked',
+  TODO = "todo",
+  IN_PROGRESS = "in_progress",
+  REVIEW = "review",
+  DONE = "done",
+  BLOCKED = "blocked",
 }
 
 export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  URGENT = "urgent",
 }
 
-@Entity('tasks')
+@Entity("tasks")
 export class Task {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
   title: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: TaskStatus,
     default: TaskStatus.TODO,
   })
   status: TaskStatus;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: TaskPriority,
     default: TaskPriority.MEDIUM,
   })
   priority: TaskPriority;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: "int", default: 0 })
   progress: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   dueDate: Date | null;
 
   @Column({ nullable: true })
   assigneeId: string;
 
   @ManyToOne(() => User, (user) => user.tasks)
-  @JoinColumn({ name: 'assigneeId' })
+  @JoinColumn({ name: "assigneeId" })
   assignee: User;
 
-  @Column({ name: 'creator_id' })
+  @Column({ name: "creator_id" })
   creatorId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'creator_id' })
+  @JoinColumn({ name: "creator_id" })
   creator: User;
 
   @OneToMany(() => Comment, (comment) => comment.task)
@@ -79,7 +80,7 @@ export class Task {
   @Column({ nullable: true })
   parentId: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   metadata: Record<string, any>;
 
   @Column({ nullable: true })
@@ -89,27 +90,31 @@ export class Task {
   version: number;
 
   // Agent任务相关字段
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   startedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   completedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   blockedAt: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   blockReason: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   lastApiCallAt: Date;
+
+  // 状态历史关联
+  @OneToMany(() => TaskStatusHistory, (history) => history.task)
+  statusHistories: TaskStatusHistory[];
 
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updatedAt' })
+  @UpdateDateColumn({ name: "updatedAt" })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deletedAt' })
+  @DeleteDateColumn({ name: "deletedAt" })
   deletedAt: Date | null;
 }
