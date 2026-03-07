@@ -13,7 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { ApiTokenGuard } from '../auth/guards/api-token.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CommentService } from '../comment/comment.service';
-import { TaskService } from '../task/task.service';
+import { TaskService } from '../task/services/task.service';
 import {
   CreateAgentCommentDto,
   QueryAgentCommentsDto,
