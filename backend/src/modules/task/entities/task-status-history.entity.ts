@@ -32,7 +32,7 @@ export class TaskStatusHistory {
     name: "old_status",
     type: "enum",
     enum: TaskStatus,
-    enumName: "task_status_enum",
+    enumName: "tasks_status_enum",
   })
   oldStatus: TaskStatus;
 
@@ -40,7 +40,7 @@ export class TaskStatusHistory {
     name: "new_status",
     type: "enum",
     enum: TaskStatus,
-    enumName: "task_status_enum",
+    enumName: "tasks_status_enum",
   })
   newStatus: TaskStatus;
 
