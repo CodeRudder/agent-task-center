@@ -58,7 +58,7 @@ export class Agent {
 
   @Column({ name: 'api_token', type: 'varchar', length: 255, unique: true, nullable: true })
   @Index()
-  apiToken: string;
+  apiToken: string | null;
 
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;

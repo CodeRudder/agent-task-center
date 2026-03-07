@@ -23,6 +23,7 @@ import { AppController } from './app.controller';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 import { appConfig, jwtConfig } from './config/app.config';
+import { SnakeNamingStrategy } from './config/snake-naming.strategy';
 
 @Module({
   imports: [
@@ -44,9 +45,10 @@ import { appConfig, jwtConfig } from './config/app.config';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: false, // 禁用自动同步，使用migrations管理schema
         logging: configService.get<string>('NODE_ENV') === 'development',
         autoLoadEntities: true,
+        namingStrategy: new SnakeNamingStrategy(),
       }),
       inject: [ConfigService],
     }),

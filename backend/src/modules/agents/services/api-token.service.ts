@@ -30,19 +30,19 @@ export class ApiTokenService {
 
     // 生成随机字符串（32字节 = 64个十六进制字符）
     const randomString = randomBytes(32).toString('hex');
-    
+
     // 生成Token: agt_<agent_id>_<random>
     const apiToken = `agt_${agentId.replace(/-/g, '')}_${randomString}`;
-    
+
     // 生成Hash（bcrypt）
-    const salt = await bcrypt.genSalt(10);
-    const apiTokenHash = await bcrypt.hash(apiToken, salt);
+    // const salt = await bcrypt.genSalt(10);
+    // const apiTokenHash = await bcrypt.hash(apiToken, salt);
 
     // 更新Agent记录
     agent.apiToken = apiToken;
-    agent.apiTokenHash = apiTokenHash;
-    agent.apiTokenExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1年有效期
-    
+    // agent.apiTokenHash = apiTokenHash;
+    // agent.apiTokenExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1年有效期
+
     await this.agentRepository.save(agent);
 
     return apiToken;
@@ -66,24 +66,24 @@ export class ApiTokenService {
     }
 
     // 验证Hash
-    const isValid = await bcrypt.compare(apiToken, agent.apiTokenHash);
-    if (!isValid) {
-      return null;
-    }
+    // const isValid = await bcrypt.compare(apiToken, agent.apiTokenHash);
+    // if (!isValid) {
+    //   return null;
+    // }
 
     // 检查过期时间
-    if (agent.apiTokenExpiresAt && agent.apiTokenExpiresAt < new Date()) {
-      return null;
-    }
+    // if (agent.apiTokenExpiresAt && agent.apiTokenExpiresAt < new Date()) {
+    //   return null;
+    // }
 
     // 更新最后访问时间
-    agent.lastApiAccessAt = new Date();
-    await this.agentRepository.save(agent);
+    // agent.lastApiAccessAt = new Date();
+    // await this.agentRepository.save(agent);
 
     return {
       agentId: agent.id,
       agentName: agent.name,
-      role: agent.role,
+      role: agent.type, // 使用type代替role
     };
   }
 
@@ -97,8 +97,8 @@ export class ApiTokenService {
     }
 
     agent.apiToken = null;
-    agent.apiTokenHash = null;
-    agent.apiTokenExpiresAt = null;
+    // agent.apiTokenHash = null;
+    // agent.apiTokenExpiresAt = null;
 
     await this.agentRepository.save(agent);
   }

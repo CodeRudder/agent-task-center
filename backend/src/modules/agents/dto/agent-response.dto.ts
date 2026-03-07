@@ -1,4 +1,4 @@
-import { AgentStatus, AgentType, AgentRole } from '../entities/agent.entity';
+import { AgentStatus, AgentType } from '../entities/agent.entity';
 
 export class AgentLoadDto {
   currentTasks: number;
@@ -27,7 +27,7 @@ export class AgentResponseDto {
   apiToken?: string;
   apiTokenExpiresAt?: Date;
   lastApiAccessAt?: Date;
-  role?: AgentRole;
+  // role?: AgentRole;
   
   createdAt: Date;
   updatedAt: Date;
