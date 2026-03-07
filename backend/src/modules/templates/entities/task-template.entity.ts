@@ -10,6 +10,7 @@ import {
   Index,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import { TaskPriority } from '../../task/entities/task.entity';
 
 export enum TemplateCategory {
   DEVELOPMENT = 'development',
@@ -19,12 +20,7 @@ export enum TemplateCategory {
   GENERAL = 'general',
 }
 
-export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
+// TaskPriority imported from task.entity.ts
 
 @Entity('task_templates')
 export class TaskTemplate {
