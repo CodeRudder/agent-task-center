@@ -44,7 +44,7 @@ import { appConfig, jwtConfig } from './config/app.config';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // Disabled temporarily due to TypeORM enum sync issue
+        synchronize: configService.get<string>('NODE_ENV') !== 'production', // Enable for test/dev, disable for production
         logging: configService.get<string>('NODE_ENV') === 'development',
         autoLoadEntities: true,
       }),

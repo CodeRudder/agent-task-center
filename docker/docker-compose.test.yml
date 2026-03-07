@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend-test:
-    image: localhost:5000/agent-task-system:v5.1-p1-11
+    image: localhost:5000/agent-task-system:v5.1-p1-10
     container_name: agent-task-backend-test
     restart: unless-stopped
     ports:
@@ -32,6 +32,18 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  frontend-test:
+    image: localhost:5000/agent-task-frontend:v5.1-p1-9
+    container_name: agent-task-frontend-test
+    restart: unless-stopped
+    ports:
+      - "3103:80"
+    networks:
+      - test-network
+    depends_on:
+      backend-test:
+        condition: service_healthy
 
   postgres-test:
     image: postgres:15-alpine
