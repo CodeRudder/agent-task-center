@@ -33,7 +33,7 @@ export class CompleteTaskController {
   @ApiParam({ name: 'id', description: '任务ID' })
   async completeTask(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
+     @Request() req: any,
   ) {
     const { agentId } = req.agent;
 

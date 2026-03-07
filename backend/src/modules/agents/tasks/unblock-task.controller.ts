@@ -33,7 +33,7 @@ export class UnblockTaskController {
   @ApiParam({ name: 'id', description: '任务ID' })
   async unblockTask(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
+     @Request() req: any,
   ) {
     const { agentId } = req.agent;
 

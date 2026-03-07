@@ -35,7 +35,7 @@ export class BlockTaskController {
   async blockTask(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { reason: string },
-    @Request() req,
+     @Request() req: any,
   ) {
     const { agentId } = req.agent;
     const { reason } = body;

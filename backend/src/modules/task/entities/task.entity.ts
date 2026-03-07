@@ -82,6 +82,9 @@ export class Task {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
+  @Column({ nullable: true })
+  templateId: string;
+
   @VersionColumn()
   version: number;
 

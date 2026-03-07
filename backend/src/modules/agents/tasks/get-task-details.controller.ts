@@ -31,7 +31,7 @@ export class GetTaskDetailsController {
   @ApiParam({ name: 'id', description: '任务ID' })
   async getTask(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
+     @Request() req: any,
   ) {
     const { agentId } = req.agent;
 

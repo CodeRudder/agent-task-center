@@ -24,29 +24,24 @@ export class GetTasksController {
   @ApiResponse({ status: 200, description: '成功返回任务列表' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiQuery({ name: 'status', required: false, description: '任务状态筛选' })
-  @ApiQuery({ name: 'priority', required: false, description: '优先级筛选' })
   @ApiQuery({ name: 'page', required: false, description: '页码' })
-  @ApiQuery({ name: 'pageSize', required: false, description:每页数量' })
-  async getTasks(@Query() query: any, @Request() req) {
+  @ApiQuery({ name: 'pageSize', required: false, description: '每页数量' })
+  async getTasks(@Query() query: any, @Request() req: any) {
     const { agentId } = req.agent;
-    const { status, priority, page = 1, pageSize = 10 } = query;
+    const { status, page = 1, pageSize = 10 } = query;
 
     this.logger.log(`Agent ${agentId} querying tasks with filters: ${JSON.stringify(query)}`);
-
-    const skip = (page - 1) * pageSize;
-    const take = Number(pageSize);
 
     const result = await this.taskService.findAll({
       assigneeId: agentId,
       status,
-      priority,
-      skip,
-      take,
+      page,
+      pageSize,
     });
 
     return {
       success: true,
-      data: result.data || result,
+      data: result,
       pagination: {
         page: Number(page),
         pageSize: Number(pageSize),

@@ -64,13 +64,13 @@ export class Agent {
   // V5: API Token相关字段
   @Column({ length: 64, unique: true, name: 'api_token', nullable: true })
   @Index()
-  apiToken: string;
+  apiToken: string | null;
 
   @Column({ length: 255, unique: true, name: 'api_token_hash', nullable: true })
-  apiTokenHash: string;
+  apiTokenHash: string | null;
 
   @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
-  apiTokenExpiresAt: Date;
+  apiTokenExpiresAt: Date | null;
 
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;
@@ -79,13 +79,13 @@ export class Agent {
   createdBy: string;
 
   @Column({ type: 'timestamp', name: 'token_created_at', nullable: true })
-  tokenCreatedAt: Date;
+  tokenCreatedAt: Date | null;
 
   @Column({ type: 'timestamp', name: 'last_api_call_at', nullable: true })
-  lastApiCallAt: Date;
+  lastApiCallAt: Date | null;
 
   @Column({ type: 'timestamp', name: 'last_api_access_at', nullable: true })
-  lastApiAccessAt: Date;
+  lastApiAccessAt: Date | null;
 
   // V5: Agent角色（用于权限控制）
   @Column({

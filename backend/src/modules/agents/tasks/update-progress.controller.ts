@@ -35,7 +35,7 @@ export class UpdateProgressController {
   async updateProgress(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { progress: number },
-    @Request() req,
+     @Request() req: any,
   ) {
     const { agentId } = req.agent;
     const { progress } = body;

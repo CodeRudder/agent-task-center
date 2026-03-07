@@ -33,7 +33,7 @@ export class StartTaskController {
   @ApiParam({ name: 'id', description: '任务ID' })
   async startTask(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
+     @Request() req: any,
   ) {
     const { agentId } = req.agent;
 
