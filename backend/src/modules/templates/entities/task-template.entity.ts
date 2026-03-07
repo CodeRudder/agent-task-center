@@ -37,7 +37,6 @@ export class TaskTemplate {
   @Column({
     type: 'enum',
     enum: TemplateCategory,
-    enumName: 'task_templates_category_enum',
     default: TemplateCategory.GENERAL,
   })
   @Index()
@@ -46,7 +45,6 @@ export class TaskTemplate {
   @Column({
     type: 'enum',
     enum: TaskPriority,
-    enumName: 'task_templates_default_priority_enum',
     default: TaskPriority.MEDIUM,
   })
   defaultPriority: TaskPriority;

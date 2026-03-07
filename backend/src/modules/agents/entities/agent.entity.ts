@@ -41,7 +41,6 @@ export class Agent {
   @Column({
     type: 'enum',
     enum: AgentType,
-    enumName: 'agents_type_enum',
     default: AgentType.DEVELOPER,
   })
   type: AgentType;
@@ -55,7 +54,6 @@ export class Agent {
   @Column({
     type: 'enum',
     enum: AgentStatus,
-    enumName: 'agents_status_enum',
     default: AgentStatus.OFFLINE,
   })
   status: AgentStatus;
@@ -93,7 +91,6 @@ export class Agent {
   @Column({
     type: 'enum',
     enum: AgentRole,
-    enumName: 'agents_role_enum',
     default: AgentRole.WORKER,
     name: 'role',
   })

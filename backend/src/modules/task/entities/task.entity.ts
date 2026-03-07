@@ -43,7 +43,6 @@ export class Task {
   @Column({
     type: "enum",
     enum: TaskStatus,
-    enumName: 'tasks_status_enum',
     default: TaskStatus.TODO,
   })
   status: TaskStatus;
@@ -51,7 +50,6 @@ export class Task {
   @Column({
     type: "enum",
     enum: TaskPriority,
-    enumName: 'tasks_priority_enum',
     default: TaskPriority.MEDIUM,
   })
   priority: TaskPriority;
