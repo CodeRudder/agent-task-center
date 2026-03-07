@@ -64,6 +64,7 @@ export class AgentStats {
     name: 'period_type',
     type: 'enum',
     enum: PeriodType,
+    enumName: 'agent_stats_period_type_enum',
   })
   periodType: PeriodType;
 
