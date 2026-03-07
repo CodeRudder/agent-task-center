@@ -4,24 +4,26 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Task } from '../../task/entities/task.entity';
 import { User } from '../../user/entities/user.entity';
 
 @Entity('comments')
+@Index(['authorId'])
+@Index(['taskId'])
+@Index(['createdAt'])
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text' })
-  content: string;
-
   @Column({ name: 'task_id' })
   taskId: string;
 
-  @ManyToOne(() => Task, (task) => task.comments)
+  @ManyToOne(() => Task, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'task_id' })
   task: Task;
 
@@ -32,17 +34,15 @@ export class Comment {
   @JoinColumn({ name: 'author_id' })
   author: User;
 
-  @Column({ 
-    name: 'author_type', 
-    type: 'varchar', 
-    length: '20',
-    default: 'user'
-  })
-  authorType: string;
+  @Column({ type: 'text' })
+  content: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp' })
+  deletedAt: Date | null;
 }

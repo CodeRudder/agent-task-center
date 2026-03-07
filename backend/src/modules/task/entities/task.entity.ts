@@ -46,7 +46,7 @@ export class Task {
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string | null;
+  description: string;
 
   @Column({
     type: 'enum',
@@ -91,13 +91,13 @@ export class Task {
   statusHistories: TaskStatusHistory[];
 
   @Column({ name: 'parent_id', nullable: true })
-  parentId: string | null;
+  parentId: string;
 
   @Column({ name: 'metadata', type: 'jsonb', nullable: true, default: {} })
   metadata: Record<string, any>;
 
   @Column({ name: 'template_id', nullable: true })
-  templateId: string | null;
+  templateId: string;
 
   @VersionColumn({ name: 'version' })
   version: number;
