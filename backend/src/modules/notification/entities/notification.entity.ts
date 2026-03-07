@@ -37,7 +37,9 @@ export class Notification {
   senderId: string | null;
 
   @Column({
-    type: 'varchar',
+    type: 'enum',
+    enum: NotificationType,
+    enumName: 'notifications_type_enum',
   })
   type: NotificationType;
 
