@@ -62,10 +62,10 @@ export class Agent {
   // V5: API Token相关字段
   @Column({ type: 'varchar', length: 64, unique: true, name: 'api_token', nullable: true })
   @Index()
-  apiToken: string | null;
+  apiToken!: string | null;
 
   @Column({ type: 'varchar', length: 255, unique: true, name: 'api_token_hash', nullable: true })
-  apiTokenHash: string | null;
+  apiTokenHash!: string | null;
 
   @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
   apiTokenExpiresAt: Date | null;
