@@ -12,7 +12,7 @@ import { TaskService } from '../../task/services/task.service';
 
 @ApiTags('agent')
 @ApiBearerAuth()
-@Controller('api/v1/agent/tasks')
+@Controller('agent/tasks')
 @UseGuards(AgentAuthGuard)
 export class GetTasksController {
   private readonly logger = new Logger(GetTasksController.name);

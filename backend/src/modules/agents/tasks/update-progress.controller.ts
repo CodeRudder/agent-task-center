@@ -17,7 +17,7 @@ import { TaskService } from '../../task/services/task.service';
 
 @ApiTags('agent')
 @ApiBearerAuth()
-@Controller('api/v1/agent/tasks')
+@Controller('agent/tasks')
 @UseGuards(AgentAuthGuard)
 export class UpdateProgressController {
   private readonly logger = new Logger(UpdateProgressController.name);

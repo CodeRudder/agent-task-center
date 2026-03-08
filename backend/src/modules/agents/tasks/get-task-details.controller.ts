@@ -15,7 +15,7 @@ import { TaskService } from '../../task/services/task.service';
 
 @ApiTags('agent')
 @ApiBearerAuth()
-@Controller('api/v1/agent/tasks')
+@Controller('agent/tasks')
 @UseGuards(AgentAuthGuard)
 export class GetTaskDetailsController {
   private readonly logger = new Logger(GetTaskDetailsController.name);
