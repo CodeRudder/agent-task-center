@@ -9,7 +9,7 @@ import {
 import { ApiTokenService } from '../services/api-token.service';
 import { AgentsService } from '../agents.service';
 
-@Controller('auth/agent')
+@Controller('agent/auth')
 export class VerifyController {
   private readonly logger = new Logger(VerifyController.name);
 
@@ -19,22 +19,22 @@ export class VerifyController {
   ) {}
 
   @Get('verify')
-  async verify(@Headers('authorization') authHeader: string) {
+  async verify(@Headers('x-agent-token') agentToken: string) {
     this.logger.log('Verifying API token');
 
     try {
-      // Extract token from Authorization header
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        this.logger.warn('Invalid or missing Authorization header');
+      // Extract token from X-Agent-Token header
+      if (!agentToken) {
+        this.logger.warn('Missing X-Agent-Token header');
         throw new UnauthorizedException({
           success: false,
-          message: 'Invalid or missing Authorization header',
+          message: 'Missing X-Agent-Token header',
           error: 'UNAUTHORIZED',
           timestamp: new Date().toISOString(),
         });
       }
 
-      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      const token = agentToken;
 
       // Validate token
       const payload = await this.apiTokenService.validateApiToken(token);
