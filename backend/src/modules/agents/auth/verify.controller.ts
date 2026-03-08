@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { Public } from '../../../common/decorators/public.decorator';
 import { ApiTokenService } from '../services/api-token.service';
 import { AgentsService } from '../agents.service';
 
@@ -18,6 +19,7 @@ export class VerifyController {
     private readonly agentsService: AgentsService,
   ) {}
 
+  @Public()  // Bypass global JwtAuthGuard - this endpoint uses X-Agent-Token header
   @Get('verify')
   async verify(@Headers('x-agent-token') agentToken: string) {
     this.logger.log('Verifying API token');
