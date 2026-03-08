@@ -27,7 +27,7 @@ export class ApiTokenGuard implements CanActivate {
     const token = authHeader.substring(7);
 
     // 判断Token类型
-    if (token.startsWith('agt_')) {
+    if (token.startsWith('agt_') || token.startsWith('at_')) {
       // API Token认证
       const payload = await this.apiTokenService.validateApiToken(token);
       if (!payload) {
