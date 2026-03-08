@@ -9,7 +9,7 @@ import {
 import { ApiTokenService } from '../services/api-token.service';
 import { AgentsService } from '../agents.service';
 
-@Controller('agent/auth')
+@Controller('auth/agent')
 export class VerifyController {
   private readonly logger = new Logger(VerifyController.name);
 
