@@ -108,6 +108,12 @@ export class Task {
   @OneToMany(() => Task, (task) => task.parent)
   subtasksAsParent: Task[];
 
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any> | null;
+
+  @Column({ name: 'template_id', nullable: true })
+  templateId: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
