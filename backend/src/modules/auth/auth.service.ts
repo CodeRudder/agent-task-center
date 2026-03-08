@@ -15,7 +15,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, name } = registerDto;
+    const { email, password, displayName } = registerDto;
 
     // Check if user exists
     const existingUser = await this.userRepository.findOne({
@@ -33,7 +33,7 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
-      name,
+      displayName,
     });
 
     await this.userRepository.save(user);
@@ -46,7 +46,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        displayName: user.displayName,
         role: user.role,
       },
     };
@@ -82,7 +82,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        displayName: user.displayName,
         role: user.role,
       },
     };

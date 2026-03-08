@@ -15,7 +15,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
-  name: string;
+  displayName: string;
 }
 
 export class LoginDto {
@@ -36,7 +36,7 @@ export class AuthResponseDto {
   user: {
     id: string;
     email: string;
-    name: string;
+    displayName: string;
     role: string;
   };
 }

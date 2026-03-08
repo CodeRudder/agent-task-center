@@ -19,7 +19,7 @@ export class AgentAuthController {
         expiresIn: 7200, // 2小时
         agent: {
           id: req.user.id,
-          name: req.user.name,
+          name: req.user.displayName,
           role: req.user.role,
         },
       },
@@ -37,7 +37,7 @@ export class AgentAuthController {
       data: {
         agent: {
           id: req.user.id,
-          name: req.user.name,
+          name: req.user.displayName,
           role: req.user.role,
         },
       },

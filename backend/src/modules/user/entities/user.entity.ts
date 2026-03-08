@@ -19,16 +19,19 @@ export class User {
   id: string;
 
   @Column({ unique: true })
+  username: string;
+
+  @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
 
-  @Column()
-  name: string;
+  @Column({ name: 'display_name' })
+  displayName: string;
 
-  @Column({ nullable: true })
-  avatar: string;
+  @Column({ name: 'avatar_url', nullable: true })
+  avatarUrl: string;
 
   @Column({ default: 'user' })
   role: string;
