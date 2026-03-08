@@ -12,6 +12,8 @@ import {
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Comment } from '../../comment/entities/comment.entity';
+import { Subtask } from './subtask.entity';
+import { TaskDependency } from './task-dependency.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -75,6 +77,12 @@ export class Task {
 
   @OneToMany(() => Comment, (comment) => comment.task)
   comments: Comment[];
+
+  @OneToMany(() => Subtask, (subtask) => subtask.task, { cascade: true })
+  subtasks: Subtask[];
+
+  @OneToMany(() => TaskDependency, (dep) => dep.task, { cascade: true })
+  dependencies: TaskDependency[];
 
   @Column({ nullable: true })
   parentId: string;
