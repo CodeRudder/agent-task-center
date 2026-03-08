@@ -44,7 +44,7 @@ import { appConfig, jwtConfig } from './config/app.config';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: false, // 禁用自动建表，使用SQL脚本管理
         logging: configService.get<string>('NODE_ENV') === 'development',
         autoLoadEntities: true,
       }),

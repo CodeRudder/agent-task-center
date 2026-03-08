@@ -9,11 +9,13 @@ import {
   OneToMany,
   JoinColumn,
   VersionColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Comment } from '../../comment/entities/comment.entity';
 import { Subtask } from './subtask.entity';
 import { TaskDependency } from './task-dependency.entity';
+import { TaskStatusHistory } from './task-status-history.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -31,6 +33,13 @@ export enum TaskPriority {
 }
 
 @Entity('tasks')
+@Index(['assigneeId'])
+@Index(['creatorId'])
+@Index(['status'])
+@Index(['priority'])
+@Index(['parentId'])
+@Index(['dueDate'])
+@Index(['deletedAt'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -44,6 +53,7 @@ export class Task {
   @Column({
     type: 'enum',
     enum: TaskStatus,
+    enumName: 'tasks_status_enum',
     default: TaskStatus.TODO,
   })
   status: TaskStatus;
@@ -51,21 +61,22 @@ export class Task {
   @Column({
     type: 'enum',
     enum: TaskPriority,
+    enumName: 'tasks_priority_enum',
     default: TaskPriority.MEDIUM,
   })
   priority: TaskPriority;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'progress', type: 'int', default: 0 })
   progress: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'due_date', type: 'timestamp', nullable: true })
   dueDate: Date | null;
 
-  @Column({ nullable: true })
-  assigneeId: string;
+  @Column({ name: 'assignee_id', nullable: true })
+  assigneeId: string | null;
 
   @ManyToOne(() => User, (user) => user.tasks)
-  @JoinColumn({ name: 'assigneeId' })
+  @JoinColumn({ name: 'assignee_id' })
   assignee: User;
 
   @Column({ name: 'creator_id' })
@@ -84,40 +95,28 @@ export class Task {
   @OneToMany(() => TaskDependency, (dep) => dep.task, { cascade: true })
   dependencies: TaskDependency[];
 
-  @Column({ nullable: true })
-  parentId: string;
+  @OneToMany(() => TaskStatusHistory, (history) => history.task)
+  statusHistories: TaskStatusHistory[];
 
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  @Column({ name: 'parent_id', nullable: true })
+  parentId: string | null;
 
-  @Column({ nullable: true })
-  templateId: string;
+  @ManyToOne(() => Task, (task) => task.subtasks)
+  @JoinColumn({ name: 'parent_id' })
+  parent: Task;
+
+  @OneToMany(() => Task, (task) => task.parent)
+  subtasksAsParent: Task[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date;
 
   @VersionColumn()
   version: number;
-
-  // Agent任务相关字段
-  @Column({ type: 'timestamp', nullable: true })
-  startedAt: Date;
-
-  @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date;
-
-  @Column({ type: 'timestamp', nullable: true })
-  blockedAt: Date;
-
-  @Column({ type: 'text', nullable: true })
-  blockReason: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  lastApiCallAt: Date;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updatedAt' })
-  updatedAt: Date;
-
-  @DeleteDateColumn({ name: 'deletedAt' })
-  deletedAt: Date | null;
 }

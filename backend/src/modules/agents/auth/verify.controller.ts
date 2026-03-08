@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { Public } from '../../../common/decorators/public.decorator';
 import { ApiTokenService } from '../services/api-token.service';
 import { AgentsService } from '../agents.service';
 
@@ -18,23 +19,24 @@ export class VerifyController {
     private readonly agentsService: AgentsService,
   ) {}
 
+  @Public()  // Bypass global JwtAuthGuard - this endpoint uses X-Agent-Token header
   @Get('verify')
-  async verify(@Headers('authorization') authHeader: string) {
+  async verify(@Headers('x-agent-token') agentToken: string) {
     this.logger.log('Verifying API token');
 
     try {
-      // Extract token from Authorization header
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        this.logger.warn('Invalid or missing Authorization header');
+      // Extract token from X-Agent-Token header
+      if (!agentToken) {
+        this.logger.warn('Missing X-Agent-Token header');
         throw new UnauthorizedException({
           success: false,
-          message: 'Invalid or missing Authorization header',
+          message: 'Missing X-Agent-Token header',
           error: 'UNAUTHORIZED',
           timestamp: new Date().toISOString(),
         });
       }
 
-      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      const token = agentToken;
 
       // Validate token
       const payload = await this.apiTokenService.validateApiToken(token);

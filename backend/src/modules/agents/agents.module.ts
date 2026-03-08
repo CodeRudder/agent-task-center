@@ -17,9 +17,13 @@ import { StartTaskController } from './tasks/start-task.controller';
 import { CompleteTaskController } from './tasks/complete-task.controller';
 import { BlockTaskController } from './tasks/block-task.controller';
 import { UnblockTaskController } from './tasks/unblock-task.controller';
+import { TaskModule } from '../task/task.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Agent, AgentStats, ApiAccessLog, Task])],
+  imports: [
+    TypeOrmModule.forFeature([Agent, AgentStats, ApiAccessLog, Task]),
+    TaskModule,
+  ],
   controllers: [
     AgentsController,
     AdminRegenerateTokenController,

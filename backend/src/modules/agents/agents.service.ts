@@ -299,4 +299,26 @@ export class AgentsService {
 
     return lastTask?.updatedAt || new Date();
   }
+
+  async validateToken(token: string): Promise<Agent | null> {
+    const agent = await this.agentRepository.findOne({
+      where: { apiToken: token },
+    });
+
+    if (!agent) {
+      return null;
+    }
+
+    // 检查Token是否过期
+    if (agent.apiTokenExpiresAt && new Date() > agent.apiTokenExpiresAt) {
+      return null;
+    }
+
+    // 检查Agent状态
+    if (agent.status !== AgentStatus.ONLINE) {
+      return null;
+    }
+
+    return agent;
+  }
 }

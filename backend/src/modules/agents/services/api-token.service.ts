@@ -53,9 +53,14 @@ export class ApiTokenService {
 
   /**
    * 验证API Token
+   * 支持两种格式（向后兼容）:
+   * - at_ (新格式，推荐)
+   * - agt_ (旧格式，逐步迁移)
    */
   async validateApiToken(apiToken: string): Promise<ApiTokenPayload | null> {
-    if (!apiToken || !apiToken.startsWith('at_')) {
+    // 支持两种Token格式：at_ 和 agt_
+    if (!apiToken || !(apiToken.startsWith('at_') || apiToken.startsWith('agt_'))) {
+      this.logger.warn(`Invalid token format: ${apiToken ? apiToken.substring(0, 10) : 'null'}...`);
       return null;
     }
 
@@ -65,6 +70,7 @@ export class ApiTokenService {
     });
 
     if (!agent) {
+      this.logger.warn(`Token not found in database`);
       return null;
     }
 
@@ -73,6 +79,8 @@ export class ApiTokenService {
     agent.lastApiAccessAt = now;
     agent.lastApiCallAt = now;
     await this.agentRepository.save(agent);
+
+    this.logger.log(`Successfully validated API token for agent ${agent.id}`);
 
     return {
       agentId: agent.id,

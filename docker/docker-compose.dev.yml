@@ -1,31 +1,31 @@
 version: '3.8'
 
 services:
-  backend-test:
-    image: localhost:5000/agent-task-system:v5.1-p1-17
-    container_name: agent-task-backend-test
+  backend-dev:
+    image: localhost:5000/agent-task-system:v5.1-test
+    container_name: agent-task-dev
     restart: unless-stopped
     ports:
-      - "3102:3000"
+      - "3002:3000"
     environment:
       NODE_ENV: development
       PORT: 3000
       API_PREFIX: api/v1
-      DB_HOST: postgres-test
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: admin
       DB_PASSWORD: admin123
-      DB_DATABASE: agent_task_test
-      REDIS_HOST: redis-test
+      DB_DATABASE: agent_task
+      REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: test-secret-key
+      JWT_SECRET: dev-secret-key
       JWT_EXPIRATION: 7d
     networks:
-      - test-network
+      - agent-task-network
     depends_on:
-      postgres-test:
+      postgres:
         condition: service_healthy
-      redis-test:
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
@@ -33,57 +33,60 @@ services:
       timeout: 10s
       retries: 3
 
-  frontend-test:
-    image: localhost:5000/agent-task-frontend:v5.1-p1-9
-    container_name: agent-task-frontend-test
-    restart: unless-stopped
-    ports:
-      - "3103:80"
-    networks:
-      - test-network
-    depends_on:
-      backend-test:
-        condition: service_healthy
-
-  postgres-test:
+  postgres:
     image: postgres:15-alpine
-    container_name: agent-task-postgres-test
+    container_name: agent-task-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: agent_task_test
+      POSTGRES_DB: agent_task
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - postgres_test_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - test-network
+      - agent-task-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  redis-test:
+  redis:
     image: redis:7-alpine
-    container_name: agent-task-redis-test
+    container_name: agent-task-redis
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
-      - redis_test_data:/data
+      - redis_data:/data
     networks:
-      - test-network
+      - agent-task-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: agent-task-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - agent-task-network
+    depends_on:
+      - postgres
+
 volumes:
-  postgres_test_data:
-  redis_test_data:
+  postgres_data:
+  redis_data:
 
 networks:
-  test-network:
+  agent-task-network:
+    driver: bridge

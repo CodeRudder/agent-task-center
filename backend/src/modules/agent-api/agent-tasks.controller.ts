@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApiTokenGuard } from '../auth/guards/api-token.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
-import { TaskService } from '../task/task.service';
+import { TaskService } from '../task/services/task.service';
 import {
   CreateAgentTaskDto,
   UpdateProgressDto,

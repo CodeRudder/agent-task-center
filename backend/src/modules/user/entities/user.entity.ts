@@ -6,10 +6,14 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Task } from '../../task/entities/task.entity';
 
 @Entity('users')
+@Index(['email'])
+@Index(['feishuOpenId'])
+@Index(['isActive'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,10 +33,10 @@ export class User {
   @Column({ default: 'user' })
   role: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'feishu_open_id', nullable: true })
   feishuOpenId: string;
 
-  @Column({ default: true })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
   @OneToMany(() => Task, (task) => task.assignee)
@@ -40,12 +44,12 @@ export class User {
 
   notifications: any[]; // For type compatibility
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @DeleteDateColumn()
+  @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 }

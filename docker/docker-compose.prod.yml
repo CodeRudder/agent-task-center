@@ -1,31 +1,31 @@
 version: '3.8'
 
 services:
-  backend-test:
+  backend-prod:
     image: localhost:5000/agent-task-system:v5.1-p1-17
-    container_name: agent-task-backend-test
+    container_name: agent-task-backend-prod
     restart: unless-stopped
     ports:
-      - "3102:3000"
+      - "8102:3000"
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3000
       API_PREFIX: api/v1
-      DB_HOST: postgres-test
+      DB_HOST: postgres-prod
       DB_PORT: 5432
       DB_USERNAME: admin
       DB_PASSWORD: admin123
-      DB_DATABASE: agent_task_test
-      REDIS_HOST: redis-test
+      DB_DATABASE: agent_task_prod
+      REDIS_HOST: redis-prod
       REDIS_PORT: 6379
-      JWT_SECRET: test-secret-key
+      JWT_SECRET: prod-secret-key
       JWT_EXPIRATION: 7d
     networks:
-      - test-network
+      - prod-network
     depends_on:
-      postgres-test:
+      postgres-prod:
         condition: service_healthy
-      redis-test:
+      redis-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
@@ -33,48 +33,53 @@ services:
       timeout: 10s
       retries: 3
 
-  frontend-test:
+  frontend-prod:
     image: localhost:5000/agent-task-frontend:v5.1-p1-9
-    container_name: agent-task-frontend-test
+    container_name: agent-task-frontend-prod
     restart: unless-stopped
     ports:
-      - "3103:80"
+      - "8103:80"
     networks:
-      - test-network
+      - prod-network
     depends_on:
-      backend-test:
+      backend-prod:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  postgres-test:
+  postgres-prod:
     image: postgres:15-alpine
-    container_name: agent-task-postgres-test
+    container_name: agent-task-postgres-prod
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: agent_task_test
+      POSTGRES_DB: agent_task_prod
     ports:
       - "5433:5432"
     volumes:
-      - postgres_test_data:/var/lib/postgresql/data
+      - postgres_prod_data:/var/lib/postgresql/data
     networks:
-      - test-network
+      - prod-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  redis-test:
+  redis-prod:
     image: redis:7-alpine
-    container_name: agent-task-redis-test
+    container_name: agent-task-redis-prod
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
-      - redis_test_data:/data
+      - redis_prod_data:/data
     networks:
-      - test-network
+      - prod-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -82,8 +87,8 @@ services:
       retries: 5
 
 volumes:
-  postgres_test_data:
-  redis_test_data:
+  postgres_prod_data:
+  redis_prod_data:
 
 networks:
-  test-network:
+  prod-network:

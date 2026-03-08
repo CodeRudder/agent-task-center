@@ -62,8 +62,7 @@ export class AgentStats {
 
   @Column({
     name: 'period_type',
-    type: 'enum',
-    enum: PeriodType,
+    type: 'varchar',
   })
   periodType: PeriodType;
 

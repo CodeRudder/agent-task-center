@@ -39,8 +39,7 @@ export class Agent {
   name: string;
 
   @Column({
-    type: 'enum',
-    enum: AgentType,
+    type: 'varchar',
     default: AgentType.DEVELOPER,
   })
   type: AgentType;
@@ -52,8 +51,7 @@ export class Agent {
   capabilities: string[];
 
   @Column({
-    type: 'enum',
-    enum: AgentStatus,
+    type: 'varchar',
     default: AgentStatus.OFFLINE,
   })
   status: AgentStatus;
@@ -62,12 +60,12 @@ export class Agent {
   maxConcurrentTasks: number;
 
   // V5: API Token相关字段
-  @Column({ length: 64, unique: true, name: 'api_token', nullable: true })
+  @Column({ type: 'varchar', length: 64, unique: true, name: 'api_token', nullable: true })
   @Index()
-  apiToken: string | null;
+  apiToken!: string | null;
 
-  @Column({ length: 255, unique: true, name: 'api_token_hash', nullable: true })
-  apiTokenHash: string | null;
+  @Column({ type: 'varchar', length: 255, unique: true, name: 'api_token_hash', nullable: true })
+  apiTokenHash!: string | null;
 
   @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
   apiTokenExpiresAt: Date | null;
@@ -89,8 +87,7 @@ export class Agent {
 
   // V5: Agent角色（用于权限控制）
   @Column({
-    type: 'enum',
-    enum: AgentRole,
+    type: 'varchar',
     default: AgentRole.WORKER,
     name: 'role',
   })

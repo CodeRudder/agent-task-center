@@ -11,11 +11,11 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { AgentAuthGuard } from '../guards/agent-auth.guard';
-import { TaskService } from '../../task/task.service';
+import { TaskService } from '../../task/services/task.service';
 
 @ApiTags('agent')
 @ApiBearerAuth()
-@Controller('api/v1/agent/tasks')
+@Controller('agent/tasks')
 @UseGuards(AgentAuthGuard)
 export class GetTaskDetailsController {
   private readonly logger = new Logger(GetTaskDetailsController.name);
