@@ -8,7 +8,6 @@ import {
   Index,
 } from 'typeorm';
 import { Task, TaskStatus } from './task.entity';
-import { User } from '../../user/entities/user.entity';
 
 export enum ChangedByType {
   USER = 'user',
@@ -40,8 +39,8 @@ export class TaskStatusHistory {
   })
   newStatus: TaskStatus;
 
-  @Column({ name: 'changed_by' })
-  changedBy: string;
+  @Column({ name: 'changed_by', type: 'text', nullable: true })
+  changedBy: string | null;
 
   @Column({
     name: 'changed_by_type',
@@ -54,15 +53,20 @@ export class TaskStatusHistory {
   @Column({ type: 'text', nullable: true })
   reason: string | null;
 
-  @CreateDateColumn({ name: 'changed_at' })
+  @Column({ name: 'changed_at' })
   changedAt: Date;
 
+  @Column({ name: 'changer_name', type: 'text', nullable: true })
+  changerName: string | null;
+
+  @Column({ name: 'changer_id', type: 'text', nullable: true })
+  changerId: string | null;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
   // Relations
-  @ManyToOne(() => Task, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Task, (task) => task.statusHistories)
   @JoinColumn({ name: 'task_id' })
   task: Task;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'changed_by' })
-  changer: User | null;
 }

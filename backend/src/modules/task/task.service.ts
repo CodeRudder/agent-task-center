@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Like } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
-import { CreateTaskDto, UpdateTaskDto, UpdateProgressDto } from './dto/task.dto';
+import { CreateTaskDto, UpdateTaskDto, UpdateProgressDto, UpdateTaskStatusDto, GetStatusHistoriesQuery } from './dto/task.dto';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
 
 @Injectable()
 export class TaskService {
@@ -57,7 +58,7 @@ export class TaskService {
   async findOne(id: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['assignee'],
+      relations: ['assignee', 'creator'],
     });
 
     if (!task) {
@@ -115,6 +116,117 @@ export class TaskService {
 
       return manager.save(task);
     });
+  }
+
+  async updateStatus(
+    id: string,
+    updateTaskStatusDto: UpdateTaskStatusDto,
+    userId?: string,
+    changedByType?: 'user' | 'agent' = 'user',
+  ): Promise<Task> {
+    const { status, reason } = updateTaskStatusDto;
+
+    // Use transaction for atomic update and history
+    return this.dataSource.transaction(async (manager) => {
+      const task = await manager.findOne(Task, { where: { id } });
+
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+
+      // Store old status
+      const oldStatus = task.status;
+
+      // Update task status
+      task.status = status;
+
+      // Update status-related fields
+      if (status === TaskStatus.IN_PROGRESS && !task.startedAt) {
+        task.startedAt = new Date();
+      }
+
+      if (status === TaskStatus.BLOCKED) {
+        task.blockedAt = new Date();
+        task.blockReason = reason || 'No reason provided';
+      }
+
+      if (status === TaskStatus.DONE) {
+        task.blockedAt = null;
+        task.blockReason = null;
+      }
+
+      if (status !== TaskStatus.BLOCKED) {
+        task.blockedAt = null;
+        task.blockReason = null;
+      }
+
+      // Save task
+      const savedTask = await manager.save(task);
+
+      // Create status history
+      const statusHistory = manager.create(TaskStatusHistory, {
+        taskId: id,
+        oldStatus,
+        newStatus: status,
+        changedBy: changedByType,
+        reason,
+        changerId: userId || task.assigneeId,
+        changerName: changedByType === 'agent' ? 'Agent' : 'User',
+      });
+
+      await manager.save(statusHistory);
+
+      return savedTask;
+    });
+  }
+
+  async getStatusHistories(
+    id: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{
+    items: {
+      id: string;
+      oldStatus: TaskStatus;
+      newStatus: TaskStatus;
+      changedBy: string;
+      changedByType: 'user' | 'agent';
+      reason?: string;
+      changedAt: string;
+      changerName?: string;
+      changerId?: string;
+    }[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const [items, total] = await this.dataSource
+      .getRepository(TaskStatusHistory)
+      .createQueryBuilder('history')
+      .where('history.taskId = :taskId', { taskId: id })
+      .orderBy('history.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const historyItems = items.map((item) => ({
+      id: item.id,
+      oldStatus: item.oldStatus,
+      newStatus: item.newStatus,
+      changedBy: item.changedBy,
+      changedByType: item.changedByType,
+      reason: item.reason,
+      changedAt: item.createdAt.toISOString(),
+      changerName: item.changerName,
+      changerId: item.changerId,
+    }));
+
+    return {
+      items: historyItems,
+      total,
+      page,
+      limit,
+    };
   }
 
   async remove(id: string): Promise<void> {

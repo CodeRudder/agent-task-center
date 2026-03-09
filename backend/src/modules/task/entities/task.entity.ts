@@ -86,6 +86,15 @@ export class Task {
   @JoinColumn({ name: 'creator_id' })
   creator: User;
 
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
+  startedAt: Date | null;
+
+  @Column({ name: 'blocked_at', type: 'timestamp', nullable: true })
+  blockedAt: Date | null;
+
+  @Column({ name: 'block_reason', type: 'text', nullable: true })
+  blockReason: string | null;
+
   @OneToMany(() => Comment, (comment) => comment.task)
   comments: Comment[];
 
@@ -105,24 +114,12 @@ export class Task {
   @JoinColumn({ name: 'parent_id' })
   parent: Task;
 
-  @OneToMany(() => Task, (task) => task.parent)
-  subtasksAsParent: Task[];
-
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any> | null;
-
-  @Column({ name: 'template_id', nullable: true })
-  templateId: string | null;
+  @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
-
-  @VersionColumn()
-  version: number;
 }
