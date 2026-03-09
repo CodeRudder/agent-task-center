@@ -26,6 +26,9 @@ export class AuthService {
       throw new UnauthorizedException('Email already registered');
     }
 
+    // Generate username from email
+    const username = await this.generateUsername(email);
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -34,19 +37,14 @@ export class AuthService {
       email,
       password: hashedPassword,
       displayName: name,
+      username, // 添加自动生成的username
     });
 
     await this.userRepository.save(user);
 
     // Generate tokens
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    };
-    
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.generateToken(user);
+    const refreshToken = this.generateRefreshToken(user);
 
     return {
       accessToken,
@@ -54,7 +52,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: name,
+        name: user.displayName,
         role: user.role,
       },
     };
@@ -83,14 +81,8 @@ export class AuthService {
     }
 
     // Generate tokens
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    };
-    
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.generateToken(user);
+    const refreshToken = this.generateRefreshToken(user);
 
     return {
       accessToken,
@@ -98,7 +90,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.displayName || user.email,
+        name: user.displayName,
         role: user.role,
       },
     };
@@ -130,6 +122,27 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * 从email生成唯一的username
+   * 使用email前缀（@符号前的部分）
+   * 如果重复，添加数字后缀
+   */
+  private async generateUsername(email: string): Promise<string> {
+    // 提取email前缀（@符号前的部分）
+    const baseUsername = email.split('@')[0].toLowerCase();
+    
+    // 检查username是否已存在
+    let username = baseUsername;
+    let counter = 1;
+    
+    while (await this.userRepository.findOne({ where: { username } })) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+    
+    return username;
+  }
+
   private generateToken(user: User): string {
     const payload = {
       sub: user.id,
@@ -138,5 +151,15 @@ export class AuthService {
     };
 
     return this.jwtService.sign(payload);
+  }
+
+  private generateRefreshToken(user: User): string {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      type: 'refresh',
+    };
+
+    return this.jwtService.sign(payload, { expiresIn: '7d' });
   }
 }
