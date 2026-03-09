@@ -45,6 +45,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsUUID()
   parentId?: string;
+
+  @ApiPropertyOptional({ example: 0, minimum: 0, maximum: 100 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  progress?: number;
 }
 
 export class UpdateTaskDto {

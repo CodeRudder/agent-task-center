@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { XssMiddleware } from './common/middleware/xss.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +12,12 @@ async function bootstrap() {
 
   // Security
   app.use(helmet());
+
+  // XSS Protection
+  app.use((req, res, next) => {
+    const middleware = new XssMiddleware();
+    middleware.use(req, res, next);
+  });
 
   // CORS
   app.enableCors({
