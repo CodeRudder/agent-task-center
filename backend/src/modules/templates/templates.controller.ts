@@ -32,7 +32,7 @@ export class TemplatesController {
   @ApiResponse({ status: 201, description: 'Template created successfully' })
   async create(
     @Body() createTemplateDto: CreateTemplateDto,
-    @Request() req,
+     @Request() req: any,
   ): Promise<TaskTemplate> {
     return this.templatesService.create(createTemplateDto, req.user.id);
   }
@@ -83,7 +83,7 @@ export class TemplatesController {
   async applyTemplate(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() applyDto: ApplyTemplateDto,
-    @Request() req,
+     @Request() req: any,
   ): Promise<Task> {
     return this.templatesService.applyTemplate(id, applyDto, req.user.id);
   }

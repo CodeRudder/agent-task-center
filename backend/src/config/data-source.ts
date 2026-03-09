@@ -11,6 +11,6 @@ export default new DataSource({
   password: process.env.DB_PASSWORD || 'admin123',
   database: process.env.DB_DATABASE || 'agent_task',
   entities: ['src/**/*.entity{.ts,.js}'],
-  migrations: ['src/database/migrations/*{.ts,.js}'],
+  migrations: ['src/migrations/*{.ts,.js}'],
   synchronize: false,
 });

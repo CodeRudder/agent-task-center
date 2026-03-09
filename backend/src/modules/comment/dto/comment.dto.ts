@@ -1,49 +1,17 @@
-import {
-  IsString,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsUUID,
-} from 'class-validator';
+import { IsString, IsUUID, Length, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-
-export class MentionDto {
-  @ApiProperty({ example: 'claw2-qa' })
-  @IsString()
-  userId: string;
-
-  @ApiPropertyOptional({ example: { start: 0, end: 10 } })
-  @IsOptional()
-  position?: {
-    start: number;
-    end: number;
-  };
-}
 
 export class CreateCommentDto {
-  @ApiProperty({ example: 'Completed code implementation, please review' })
+  @ApiProperty({ example: 'This task needs more details', minLength: 1, maxLength: 500 })
   @IsString()
+  @Length(1, 500, { message: 'Comment content must be between 1 and 500 characters' })
   content: string;
-
-  @ApiProperty({ example: 'task-uuid' })
-  @IsUUID()
-  taskId: string;
-
-  @ApiPropertyOptional({ type: [MentionDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => MentionDto)
-  mentions?: MentionDto[];
 }
 
-export class QueryCommentsDto {
-  @ApiPropertyOptional({ minimum: 1, default: 1 })
+export class UpdateCommentDto {
+  @ApiPropertyOptional({ minLength: 1, maxLength: 500 })
   @IsOptional()
-  page?: number;
-
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
-  @IsOptional()
-  pageSize?: number;
+  @IsString()
+  @Length(1, 500, { message: 'Comment content must be between 1 and 500 characters' })
+  content?: string;
 }

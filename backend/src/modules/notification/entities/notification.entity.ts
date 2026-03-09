@@ -3,41 +3,87 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
-  Index,
 } from 'typeorm';
 import { Agent } from '../../agents/entities/agent.entity';
+import { Task } from '../../task/entities/task.entity';
+import { Comment } from '../../comment/entities/comment.entity';
+
+export enum NotificationType {
+  TASK_CREATED = 'task_created',
+  TASK_ASSIGNED = 'task_assigned',
+  TASK_COMPLETED = 'task_completed',
+  TASK_UPDATED = 'task_updated',
+  SYSTEM_MESSAGE = 'system_message',
+  AGENT_MESSAGE = 'agent_message',
+  COMMENT_ADDED = 'comment_added',
+}
 
 @Entity('notifications')
-@Index(['agentId', 'read'])
-@Index(['agentId', 'createdAt'])
+@Index(['recipientId', 'isRead'])
+@Index(['createdAt'])
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'agent_id' })
-  agentId: string;
+  @Column({ name: 'recipient_id' })
+  recipientId: string;
 
-  @ManyToOne(() => Agent)
-  @JoinColumn({ name: 'agent_id' })
-  agent: Agent;
+  @Column({ name: 'sender_id', nullable: true })
+  senderId: string | null;
 
-  @Column()
-  type: string;
+  @Column({
+    type: 'enum',
+    enum: NotificationType,
+    enumName: 'notifications_type_enum',
+  })
+  type: NotificationType;
 
-  @Column()
+  @Column({ type: 'varchar', length: 200 })
   title: string;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'text', nullable: true })
+  content: string | null;
 
-  @Column({ default: false })
-  read: boolean;
+  @Column({ name: 'related_task_id', nullable: true })
+  relatedTaskId: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
-  data: Record<string, any>;
+  @Column({ name: 'related_comment_id', nullable: true })
+  relatedCommentId: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @Column({ name: 'is_read', default: false })
+  isRead: boolean;
+
+  @Column({ name: 'read_at', nullable: true, type: 'timestamp' })
+  readAt: Date | null;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp' })
+  deletedAt: Date | null;
+
+  // Relationships
+  @ManyToOne(() => Agent)
+  @JoinColumn({ name: 'recipient_id' })
+  recipient: Agent;
+
+  @ManyToOne(() => Agent)
+  @JoinColumn({ name: 'sender_id' })
+  sender: Agent | null;
+
+  @ManyToOne(() => Task)
+  @JoinColumn({ name: 'related_task_id' })
+  relatedTask: Task | null;
+
+  @ManyToOne(() => Comment)
+  @JoinColumn({ name: 'related_comment_id' })
+  relatedComment: Comment | null;
 }

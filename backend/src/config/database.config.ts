@@ -1,10 +1,15 @@
 import { registerAs } from '@nestjs/config';
 
-export const databaseConfig = registerAs('database', () => ({
-  type: 'postgres',
+const databaseConfig = registerAs('database', () => ({
+  type: 'mysql' as const,
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'admin',
-  password: process.env.DB_PASSWORD || 'admin123',
-  database: process.env.DB_DATABASE || 'agent_task',
+  port: parseInt(process.env.DB_PORT || '3306', 10),
+  username: process.env.DB_USERNAME || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_DATABASE || 'agent_task_system',
+  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  synchronize: process.env.NODE_ENV !== 'production',
 }));
+
+export default databaseConfig;
+export { databaseConfig };

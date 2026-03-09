@@ -3,36 +3,28 @@ import {
   Get,
   Post,
   Put,
-  Delete,
   Body,
   Param,
   Query,
+  UseGuards,
+  Req,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { AgentsService } from './agents.service';
-import { ApiTokenService } from './services/api-token.service';
-import {
-  CreateAgentDto,
-  UpdateAgentDto,
-  QueryAgentDto,
-  AgentResponseDto,
-  AgentListResponseDto,
-} from './dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateAgentDto, UpdateAgentDto, QueryAgentDto } from './dto/agent.dto';
 
 @Controller('agents')
+@UseGuards(JwtAuthGuard)
 export class AgentsController {
-  constructor(
-    private readonly agentsService: AgentsService,
-    private readonly apiTokenService: ApiTokenService,
-  ) {}
+  constructor(private readonly agentsService: AgentsService) {}
 
   @Get()
-  async findAll(
-    @Query() query: QueryAgentDto,
-  ): Promise<{ success: boolean; data: AgentListResponseDto; timestamp: string }> {
+  async findAll(@Query() query: QueryAgentDto) {
     const result = await this.agentsService.findAll(query);
+    
     return {
       success: true,
       data: result,
@@ -41,25 +33,26 @@ export class AgentsController {
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ success: boolean; data: AgentResponseDto; timestamp: string }> {
-    const result = await this.agentsService.findOne(id);
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    const agent = await this.agentsService.findOne(id);
+    
     return {
       success: true,
-      data: result,
+      data: agent,
       timestamp: new Date().toISOString(),
     };
   }
 
   @Post()
-  async create(
-    @Body() createAgentDto: CreateAgentDto,
-  ): Promise<{ success: boolean; data: AgentResponseDto; timestamp: string }> {
-    const result = await this.agentsService.create(createAgentDto);
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createAgentDto: CreateAgentDto, @Req() req: any) {
+    const userId = req.user?.userId || req.user?.id;
+    const agent = await this.agentsService.create(createAgentDto, userId);
+    
     return {
       success: true,
-      data: result,
+      data: agent,
+      message: 'Agent created successfully',
       timestamp: new Date().toISOString(),
     };
   }
@@ -68,77 +61,13 @@ export class AgentsController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateAgentDto: UpdateAgentDto,
-  ): Promise<{ success: boolean; data: AgentResponseDto; timestamp: string }> {
-    const result = await this.agentsService.update(id, updateAgentDto);
-    return {
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  // V5: API Token管理端点
-
-  @Post(':id/api-token')
-  async generateApiToken(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{
-    success: boolean;
-    data: { apiToken: string; expiresAt: string };
-    message: string;
-    timestamp: string;
-  }> {
-    const apiToken = await this.apiTokenService.generateApiToken(id);
-    const agent = await this.agentsService.findOne(id);
+  ) {
+    const agent = await this.agentsService.update(id, updateAgentDto);
     
     return {
       success: true,
-      data: {
-        apiToken,
-        expiresAt: agent.apiTokenExpiresAt.toISOString(),
-      },
-      message: 'API Token generated successfully',
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  @Delete(':id/api-token')
-  @HttpCode(HttpStatus.OK)
-  async revokeApiToken(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{
-    success: boolean;
-    message: string;
-    timestamp: string;
-  }> {
-    await this.apiTokenService.revokeApiToken(id);
-    
-    return {
-      success: true,
-      message: 'API Token revoked successfully',
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  @Post(':id/api-token/regenerate')
-  async regenerateApiToken(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{
-    success: boolean;
-    data: { apiToken: string; expiresAt: string };
-    message: string;
-    timestamp: string;
-  }> {
-    const apiToken = await this.apiTokenService.regenerateApiToken(id);
-    const agent = await this.agentsService.findOne(id);
-    
-    return {
-      success: true,
-      data: {
-        apiToken,
-        expiresAt: agent.apiTokenExpiresAt.toISOString(),
-      },
-      message: 'API Token regenerated successfully',
+      data: agent,
+      message: 'Agent updated successfully',
       timestamp: new Date().toISOString(),
     };
   }

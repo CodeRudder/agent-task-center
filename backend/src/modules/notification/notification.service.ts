@@ -1,106 +1,223 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from './entities/notification.entity';
-import { QueryNotificationDto } from './dto/notification.dto';
+import { Notification, NotificationType } from './entities/notification.entity';
+import { CreateNotificationDto, QueryNotificationDto, PushNotificationDto } from './dto/notification.dto';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectRepository(Notification)
-    private notificationRepository: Repository<Notification>,
+    private readonly notificationRepository: Repository<Notification>,
   ) {}
 
-  // New method for Phase 2-B API
-  async findByAgent(
+  async create(createNotificationDto: CreateNotificationDto): Promise<Notification> {
+    const notification = this.notificationRepository.create(createNotificationDto);
+    return await this.notificationRepository.save(notification);
+  }
+
+  async findAll(
     agentId: string,
-    query: QueryNotificationDto,
-  ): Promise<{ items: Notification[]; total: number; unreadCount: number }> {
-    const { page = 1, pageSize = 20, readStatus } = query;
+    queryDto: QueryNotificationDto,
+  ): Promise<{ items: Notification[]; total: number }> {
+    const { status, type, page = 1, pageSize = 10 } = queryDto;
 
     const queryBuilder = this.notificationRepository
       .createQueryBuilder('notification')
-      .where('notification.agentId = :agentId', { agentId })
-      .orderBy('notification.createdAt', 'DESC');
+      .where('notification.recipientId = :agentId', { agentId });
 
-    // Filter by read status
-    if (readStatus === 'true') {
-      queryBuilder.andWhere('notification.read = :read', { read: true });
-    } else if (readStatus === 'false') {
-      queryBuilder.andWhere('notification.read = :read', { read: false });
+    // Filter by status
+    if (status === 'read') {
+      queryBuilder.andWhere('notification.isRead = :isRead', { isRead: true });
+    } else if (status === 'unread') {
+      queryBuilder.andWhere('notification.isRead = :isRead', { isRead: false });
     }
 
-    // Get total count
+    // Filter by type
+    if (type) {
+      queryBuilder.andWhere('notification.type = :type', { type });
+    }
+
+    // Count total
     const total = await queryBuilder.getCount();
 
-    // Get unread count
-    const unreadCount = await this.notificationRepository.count({
-      where: { agentId, read: false },
-    });
-
-    // Get paginated items
+    // Get paginated results
     const items = await queryBuilder
+      .orderBy('notification.createdAt', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getMany();
 
-    return { items, total, unreadCount };
+    return { items, total };
   }
 
-  // Legacy method for backward compatibility with agent-notifications.controller
-  async getNotifications(
-    agentId: string,
-    limit: number = 20,
-  ): Promise<Notification[]> {
-    return this.notificationRepository.find({
-      where: { agentId },
-      order: { createdAt: 'DESC' },
-      take: limit,
-    });
-  }
-
-  // New method for Phase 2-B API
-  async markAsRead(id: string, agentId: string): Promise<Notification> {
+  async findOne(id: string, agentId: string): Promise<Notification> {
     const notification = await this.notificationRepository.findOne({
       where: { id },
+      relations: ['recipient', 'sender', 'relatedTask'],
     });
 
     if (!notification) {
-      throw new NotFoundException('通知不存在');
+      throw new NotFoundException('Notification not found');
     }
 
-    // Verify ownership
-    if (notification.agentId !== agentId) {
-      throw new ForbiddenException('无权操作此通知');
+    if (notification.recipientId !== agentId) {
+      throw new ForbiddenException('Access denied');
     }
 
-    notification.read = true;
-    return this.notificationRepository.save(notification);
+    return notification;
   }
 
-  async markAllAsRead(agentId: string): Promise<void> {
-    await this.notificationRepository.update(
-      { agentId, read: false },
-      { read: true },
-    );
-  }
-
-  async create(
+  async update(
+    id: string,
+    updateNotificationDto: any,
     agentId: string,
-    type: string,
-    title: string,
-    content: string,
-    data?: Record<string, any>,
   ): Promise<Notification> {
-    const notification = this.notificationRepository.create({
-      agentId,
-      type,
-      title,
-      content,
-      data,
-      read: false,
+    const notification = await this.findOne(id, agentId);
+
+    Object.assign(notification, updateNotificationDto);
+
+    return await this.notificationRepository.save(notification);
+  }
+
+  async markAsRead(
+    notificationIds: string[],
+    agentId: string,
+  ): Promise<{ count: number }> {
+    // Verify all notifications belong to the agent
+    const notifications = await this.notificationRepository.find({
+      where: { id: notificationIds as any },
     });
 
-    return this.notificationRepository.save(notification);
+    const invalidIds = notifications
+      .filter(n => n.recipientId !== agentId)
+      .map(n => n.id);
+
+    if (invalidIds.length > 0) {
+      throw new ForbiddenException(
+        `Cannot mark notifications as read: ${invalidIds.join(', ')} do not belong to you`,
+      );
+    }
+
+    const result = await this.notificationRepository.update(
+      { id: notificationIds as any, isRead: false },
+      { isRead: true, readAt: new Date() },
+    );
+
+    return { count: result.affected || 0 };
+  }
+
+  async markAllAsRead(agentId: string): Promise<{ count: number }> {
+    const result = await this.notificationRepository.update(
+      { recipientId: agentId, isRead: false },
+      { isRead: true, readAt: new Date() },
+    );
+
+    return { count: result.affected || 0 };
+  }
+
+  async remove(id: string, agentId: string): Promise<void> {
+    const notification = await this.findOne(id, agentId);
+    await this.notificationRepository.remove(notification);
+  }
+
+  async removeMany(notificationIds: string[], agentId: string): Promise<{ count: number }> {
+    // Verify all notifications belong to the agent
+    const notifications = await this.notificationRepository.find({
+      where: { id: notificationIds as any },
+    });
+
+    const invalidIds = notifications
+      .filter(n => n.recipientId !== agentId)
+      .map(n => n.id);
+
+    if (invalidIds.length > 0) {
+      throw new ForbiddenException(
+        `Cannot delete notifications: ${invalidIds.join(', ')} do not belong to you`,
+      );
+    }
+
+    const result = await this.notificationRepository.delete({
+      id: notificationIds as any,
+    });
+
+    return { count: result.affected || 0 };
+  }
+
+  async getUnreadCount(agentId: string): Promise<number> {
+    return await this.notificationRepository.count({
+      where: { recipientId: agentId, isRead: false },
+    });
+  }
+
+  async push(pushNotificationDto: PushNotificationDto, senderId: string): Promise<Notification> {
+    const notification = this.notificationRepository.create({
+      ...pushNotificationDto,
+      senderId,
+    });
+
+    return await this.notificationRepository.save(notification);
+  }
+
+  async createTaskCreatedNotification(task: any): Promise<Notification> {
+    const notification = this.notificationRepository.create({
+      recipientId: task.creatorId,
+      type: NotificationType.TASK_CREATED,
+      title: 'New task created',
+      content: `Task "${task.title}" has been created successfully.`,
+      relatedTaskId: task.id,
+    });
+
+    return await this.notificationRepository.save(notification);
+  }
+
+  async createTaskAssignedNotification(task: any): Promise<Notification | null> {
+    if (!task.assigneeId) {
+      return null;
+    }
+
+    const notification = this.notificationRepository.create({
+      recipientId: task.assigneeId,
+      type: NotificationType.TASK_ASSIGNED,
+      title: 'New task assigned',
+      content: `You have been assigned task "${task.title}".`,
+      relatedTaskId: task.id,
+    });
+
+    return await this.notificationRepository.save(notification);
+  }
+
+  async createTaskCompletedNotification(task: any): Promise<Notification | null> {
+    if (!task.creatorId) {
+      return null;
+    }
+
+    const notification = this.notificationRepository.create({
+      recipientId: task.creatorId,
+      type: NotificationType.TASK_COMPLETED,
+      title: 'Task completed',
+      content: `Task "${task.title}" has been completed.`,
+      relatedTaskId: task.id,
+    });
+
+    return await this.notificationRepository.save(notification);
+  }
+
+  async createCommentAddedNotification(comment: any): Promise<Notification | null> {
+    if (!comment.task?.creatorId) {
+      return null;
+    }
+
+    const notification = this.notificationRepository.create({
+      recipientId: comment.task.creatorId,
+      senderId: comment.authorId,
+      type: NotificationType.COMMENT_ADDED,
+      title: 'New comment added',
+      content: `A new comment has been added to task "${comment.task.title}".`,
+      relatedTaskId: comment.taskId,
+      relatedCommentId: comment.id,
+    });
+
+    return await this.notificationRepository.save(notification);
   }
 }

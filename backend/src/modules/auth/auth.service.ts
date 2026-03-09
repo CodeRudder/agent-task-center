@@ -15,8 +15,9 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, name } = registerDto;
+    const { email, password, displayName } = registerDto;
 
+    // Check if user exists
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
@@ -25,16 +26,19 @@ export class AuthService {
       throw new UnauthorizedException('Email already registered');
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
-      name,
+      displayName,
     });
 
     await this.userRepository.save(user);
 
+    // Generate token
     const accessToken = this.generateToken(user);
 
     return {
@@ -42,7 +46,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        displayName: user.displayName,
         role: user.role,
       },
     };
@@ -51,18 +55,26 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
+    // Find user
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if user is active
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is deactivated');
+    }
+
+    // Generate token
     const accessToken = this.generateToken(user);
 
     return {
@@ -70,13 +82,23 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        displayName: user.displayName,
         role: user.role,
       },
     };
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
+  async validateUser(userId: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user || !user.isActive) {
+      return null;
+    }
+
+    return user;
+  }
+
+  async validateUserByEmail(email: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user || !user.isActive) {
@@ -84,21 +106,11 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+
     if (!isPasswordValid) {
       return null;
     }
 
-    return user;
-  }
-
-  async findById(userId: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    
-    if (!user || !user.isActive) {
-      return null;
-    }
-    
     return user;
   }
 

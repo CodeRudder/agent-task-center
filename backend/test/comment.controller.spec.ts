@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CommentController } from '../src/modules/comment/comment.controller';
 import { CommentService } from '../src/modules/comment/comment.service';
+import { ApiTokenService } from '../src/modules/agents/services/api-token.service';
+import { JwtService } from '@nestjs/jwt';
 import { CreateCommentDto, QueryCommentsDto } from '../src/modules/comment/dto/comment.dto';
 
 describe('CommentController', () => {
@@ -37,6 +39,14 @@ describe('CommentController', () => {
     remove: jest.fn(),
   };
 
+  const mockApiTokenService = {
+    validateApiToken: jest.fn(),
+  };
+
+  const mockJwtService = {
+    verify: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CommentController],
@@ -45,8 +55,21 @@ describe('CommentController', () => {
           provide: CommentService,
           useValue: mockService,
         },
+        {
+          provide: ApiTokenService,
+          useValue: mockApiTokenService,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(require('../src/modules/auth/guards/api-token.guard'))
+      .useValue({ canActivate: jest.fn(() => true) })
+      .overrideGuard(require('../src/modules/auth/guards/permissions.guard'))
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<CommentController>(CommentController);
     service = module.get<CommentService>(CommentService);

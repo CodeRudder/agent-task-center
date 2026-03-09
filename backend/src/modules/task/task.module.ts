@@ -1,14 +1,21 @@
-import { AgentsModule } from "../agents/agents.module";
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
+import { TaskStatusMachineService } from './services/task-status-machine.service';
 import { TaskController } from './task.controller';
 import { Task } from './entities/task.entity';
+import { Subtask } from './entities/subtask.entity';
+import { TaskDependency } from './entities/task-dependency.entity';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
+import { SubtaskService } from './services/subtask.service';
+import { SubtaskController } from './controllers/subtask.controller';
+import { TaskDependencyService } from './services/task-dependency.service';
+import { TaskDependencyController } from './controllers/task-dependency.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task]), AgentsModule],
-  controllers: [TaskController],
-  providers: [TaskService],
-  exports: [TaskService],
+  imports: [TypeOrmModule.forFeature([Task, Subtask, TaskDependency, TaskStatusHistory])],
+  controllers: [TaskController, SubtaskController, TaskDependencyController],
+  providers: [TaskService, TaskStatusMachineService, SubtaskService, TaskDependencyService],
+  exports: [TaskService, TaskStatusMachineService, SubtaskService, TaskDependencyService],
 })
 export class TaskModule {}

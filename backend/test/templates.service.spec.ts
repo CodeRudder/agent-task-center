@@ -52,6 +52,11 @@ describe('TemplatesService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    startedAt: null,
+    completedAt: null,
+    blockedAt: null,
+    blockReason: null,
+    lastApiCallAt: null,
   };
 
   const mockTemplateRepository = {
