@@ -15,7 +15,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
-  displayName: string;
+  name: string;
 }
 
 export class LoginDto {
@@ -33,10 +33,13 @@ export class AuthResponseDto {
   accessToken: string;
 
   @ApiProperty()
+  refreshToken: string;
+
+  @ApiProperty()
   user: {
     id: string;
     email: string;
-    displayName: string;
+    name: string;
     role: string;
   };
 }

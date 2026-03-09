@@ -15,7 +15,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, displayName } = registerDto;
+    const { email, password, name } = registerDto;
 
     // Check if user exists
     const existingUser = await this.userRepository.findOne({
@@ -33,20 +33,28 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
-      displayName,
+      displayName: name,
     });
 
     await this.userRepository.save(user);
 
-    // Generate token
-    const accessToken = this.generateToken(user);
+    // Generate tokens
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
-        displayName: user.displayName,
+        name: name,
         role: user.role,
       },
     };
@@ -74,15 +82,23 @@ export class AuthService {
       throw new UnauthorizedException('User account is deactivated');
     }
 
-    // Generate token
-    const accessToken = this.generateToken(user);
+    // Generate tokens
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
-        displayName: user.displayName,
+        name: user.displayName || user.email,
         role: user.role,
       },
     };
