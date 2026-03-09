@@ -14,6 +14,7 @@ import { Task } from '../../task/entities/task.entity';
 @Index(['email'])
 @Index(['feishuOpenId'])
 @Index(['isActive'])
+@Index(['username'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -23,6 +24,9 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column({ unique: true })
+  username: string;
 
   @Column({ name: 'display_name' })
   displayName: string;
