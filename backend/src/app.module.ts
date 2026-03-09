@@ -43,6 +43,7 @@ import { appConfig, jwtConfig } from './config/app.config';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
+          migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false, // 禁用自动建表，使用SQL脚本管理
         logging: configService.get<string>('NODE_ENV') === 'development',
