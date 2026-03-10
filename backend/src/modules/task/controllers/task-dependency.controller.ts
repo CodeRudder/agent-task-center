@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Patch,
   Param,
@@ -9,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { TaskDependencyService } from '../services/task-dependency.service';
-import { CreateTaskDependencyDto, UpdateTaskDependencyDto } from '../dto/task-dependency.dto';
+import { CreateTaskDependencyDto, UpdateTaskDependencyDto, SetDependenciesDto } from '../dto/task-dependency.dto';
 
 @ApiTags('task-dependencies')
 @Controller('tasks/:taskId/dependencies')
@@ -21,6 +22,12 @@ export class TaskDependencyController {
   create(@Param('taskId') taskId: string, @Body() dto: CreateTaskDependencyDto) {
     dto.taskId = taskId;
     return this.dependencyService.create(dto);
+  }
+
+  @Put()
+  @ApiOperation({ summary: 'Set all dependencies for a task (replace)' })
+  setDependencies(@Param('taskId') taskId: string, @Body() dto: SetDependenciesDto) {
+    return this.dependencyService.setDependencies(taskId, dto.dependsOnTaskIds);
   }
 
   @Get()

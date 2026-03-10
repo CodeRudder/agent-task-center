@@ -108,4 +108,42 @@ export class TaskDependencyService {
       hasCycle: false,
     };
   }
+
+  async setDependencies(taskId: string, dependsOnTaskIds: string[]): Promise<TaskDependency[]> {
+    // Step 1: Check for cycles in all new dependencies
+    for (const dependsOnTaskId of dependsOnTaskIds) {
+      const cycleCheck = await this.detectCycle(taskId, dependsOnTaskId);
+      if (cycleCheck.hasCycle) {
+        throw new BadRequestException(
+          `Circular dependency detected: ${cycleCheck.cyclePath?.join(' -> ')}`,
+        );
+      }
+    }
+
+    // Step 2: Delete all existing dependencies for this task
+    const existingDeps = await this.dependencyRepo.find({ where: { taskId } });
+    if (existingDeps.length > 0) {
+      await this.dependencyRepo.remove(existingDeps);
+    }
+
+    // Step 3: Create new dependencies
+    const newDependencies: TaskDependency[] = [];
+    for (const dependsOnTaskId of dependsOnTaskIds) {
+      const dependency = this.dependencyRepo.create({
+        taskId,
+        dependsOnTaskId,
+        dependencyType: 'finish_to_start' as any, // Default dependency type
+        isBlocking: true, // Default to blocking
+        autoResolve: false,
+      });
+      newDependencies.push(dependency);
+    }
+
+    // Step 4: Save all new dependencies
+    if (newDependencies.length > 0) {
+      await this.dependencyRepo.save(newDependencies);
+    }
+
+    return newDependencies;
+  }
 }

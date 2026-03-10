@@ -1,4 +1,4 @@
-import { IsEnum, IsBoolean, IsOptional, IsInt, IsUUID, Min, Max } from 'class-validator';
+import { IsEnum, IsBoolean, IsOptional, IsInt, IsUUID, Min, Max, IsArray, ArrayNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DependencyType } from '../entities/task-dependency.entity';
 
@@ -96,4 +96,11 @@ export class CycleDetectionResponseDto {
 
   @ApiPropertyOptional({ description: '检测的任务总数' })
   totalTasksChecked?: number;
+}
+
+export class SetDependenciesDto {
+  @ApiProperty({ description: '依赖的任务ID数组', type: [String] })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  dependsOnTaskIds: string[];
 }
