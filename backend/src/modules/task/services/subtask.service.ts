@@ -15,7 +15,7 @@ export class SubtaskService {
   ) {}
 
   async create(dto: CreateSubtaskDto): Promise<Subtask> {
-    const task = await this.taskRepo.findOne({ where: { id: dto.taskId } });
+    const task = await this.taskRepo.findOne({ where: { id: dto.taskId! } });
     if (!task) {
       throw new NotFoundException(`Task ${dto.taskId} not found`);
     }
@@ -23,7 +23,7 @@ export class SubtaskService {
     const subtask = this.subtaskRepo.create(dto);
     const saved = await this.subtaskRepo.save(subtask);
     
-    await this.updateTaskProgress(dto.taskId);
+    await this.updateTaskProgress(dto.taskId!);
     
     return saved;
   }

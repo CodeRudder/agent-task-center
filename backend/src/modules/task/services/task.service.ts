@@ -218,7 +218,7 @@ export class TaskService {
         changedByType: item.changedByType,
         reason: item.reason || undefined,
         changedAt: item.changedAt.toISOString(),
-        changerName: item.changer?.displayName,
+        changerName: item.changerName,
       })),
       total,
       page,

@@ -2,9 +2,10 @@ import { IsString, IsBoolean, IsOptional, IsInt, IsUUID } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSubtaskDto {
-  @ApiProperty({ description: '任务ID' })
+  @ApiPropertyOptional({ description: '任务ID（从URL参数中获取）' })
   @IsUUID()
-  taskId: string;
+  @IsOptional()
+  taskId?: string;
 
   @ApiProperty({ description: '子任务标题' })
   @IsString()

@@ -42,11 +42,12 @@ export interface StatusHistoryItem {
   id: string;
   oldStatus: TaskStatus;
   newStatus: TaskStatus;
-  changedBy: string;
+  changedBy: string | null;
   changedByType: "user" | "agent";
-  reason?: string;
+  reason?: string | null;
   changedAt: string;
-  changerName?: string;
+  changerName?: string | null;
+  changerId?: string | null;
 }
 
 export interface StatusHistoriesResponse {

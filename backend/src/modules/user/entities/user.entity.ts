@@ -28,8 +28,6 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ unique: true })
-  username: string;
 
   @Column({ name: 'display_name' })
   displayName: string;

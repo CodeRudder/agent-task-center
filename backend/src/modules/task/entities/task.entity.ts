@@ -114,6 +114,15 @@ export class Task {
   @Column({ name: 'template_id', type: 'varchar', nullable: true })
   templateId: string | null;
 
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
+  startedAt: Date | null;
+
+  @Column({ name: 'blocked_at', type: 'timestamp', nullable: true })
+  blockedAt: Date | null;
+
+  @Column({ name: 'block_reason', type: 'text', nullable: true })
+  blockReason: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Like } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
 import { CreateTaskDto, UpdateTaskDto, UpdateProgressDto, UpdateTaskStatusDto, GetStatusHistoriesQuery } from './dto/task.dto';
+import { StatusHistoriesResponse } from './dto/update-task-status.dto';
 import { TaskStatusHistory } from './entities/task-status-history.entity';
 
 @Injectable()
@@ -122,7 +123,7 @@ export class TaskService {
     id: string,
     updateTaskStatusDto: UpdateTaskStatusDto,
     userId?: string,
-    changedByType?: 'user' | 'agent' = 'user',
+    changedByType: 'user' | 'agent' = 'user',
   ): Promise<Task> {
     const { status, reason } = updateTaskStatusDto;
 
@@ -184,22 +185,7 @@ export class TaskService {
     id: string,
     page: number = 1,
     limit: number = 20,
-  ): Promise<{
-    items: {
-      id: string;
-      oldStatus: TaskStatus;
-      newStatus: TaskStatus;
-      changedBy: string;
-      changedByType: 'user' | 'agent';
-      reason?: string;
-      changedAt: string;
-      changerName?: string;
-      changerId?: string;
-    }[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  ): Promise<StatusHistoriesResponse> {
     const [items, total] = await this.dataSource
       .getRepository(TaskStatusHistory)
       .createQueryBuilder('history')
