@@ -20,39 +20,40 @@ export class TaskDependency {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'task_id' })
   taskId: string;
 
   @ManyToOne(() => Task, (task) => task.dependencies)
-  @JoinColumn({ name: 'taskId' })
+  @JoinColumn({ name: 'task_id' })
   task: Task;
 
-  @Column()
+  @Column({ name: 'depends_on_task_id' })
   dependsOnTaskId: string;
 
   @ManyToOne(() => Task)
-  @JoinColumn({ name: 'dependsOnTaskId' })
+  @JoinColumn({ name: 'depends_on_task_id' })
   dependsOnTask: Task;
 
   @Column({
     type: 'enum',
     enum: DependencyType,
     default: DependencyType.BLOCKING,
+    name: 'dependency_type',
   })
   dependencyType: DependencyType;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: true, name: 'is_blocking' })
   isBlocking: boolean;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: 'boolean', default: false, name: 'auto_resolve' })
   autoResolve: boolean;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true, name: 'resolve_after_hours' })
   resolveAfterHours: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
