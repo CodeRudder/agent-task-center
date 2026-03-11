@@ -72,14 +72,37 @@ export class TaskService {
   async findOne(id: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ["assignee", "statusHistories"],
+      relations: ["assignee", "statusHistories", "dependencies"],
     });
 
     if (!task) {
       throw new NotFoundException("Task not found");
     }
 
-    return task;
+    // Calculate is_blocked_by_dependency
+    let isBlockedByDependency = false;
+    if (task.dependencies && task.dependencies.length > 0) {
+      // Check if any blocking dependency is incomplete
+      for (const dep of task.dependencies) {
+        if (dep.isBlocking) {
+          // Query the dependency task to check its status
+          const depTask = await this.taskRepository.findOne({
+            where: { id: dep.dependsOnTaskId },
+            select: ['status'],
+          });
+          if (depTask && depTask.status !== TaskStatus.DONE) {
+            isBlockedByDependency = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Add isBlockedByDependency to the response
+    return {
+      ...task,
+      isBlockedByDependency,
+    } as any;
   }
 
   async update(
