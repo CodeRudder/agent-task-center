@@ -50,17 +50,20 @@ export class TaskController {
   @ApiQuery({ name: "assigneeId", required: false })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "pageSize", required: false, type: Number })
+  @ApiQuery({ name: "since", required: false, description: "Incremental query - only return tasks updated after this timestamp (ISO 8601)" })
   async findAll(
     @Query("status") status?: TaskStatus,
     @Query("assigneeId") assigneeId?: string,
     @Query("page") page?: number,
     @Query("pageSize") pageSize?: number,
+    @Query("since") since?: string,
   ): Promise<{ items: Task[]; total: number }> {
     return this.taskService.findAll({
       status,
       assigneeId,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
+      since,
     });
   }
 

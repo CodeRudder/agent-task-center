@@ -30,8 +30,9 @@ export class TaskService {
     assigneeId?: string;
     page?: number;
     pageSize?: number;
+    since?: string; // Phase 1: 增量查询 - 只返回指定时间后更新的任务
   }): Promise<{ items: Task[]; total: number }> {
-    const { status, assigneeId, page = 1, pageSize = 10 } = options;
+    const { status, assigneeId, page = 1, pageSize = 10, since } = options;
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
@@ -44,6 +45,14 @@ export class TaskService {
 
     if (assigneeId) {
       queryBuilder.andWhere('task.assigneeId = :assigneeId', { assigneeId });
+    }
+
+    // Phase 1: 增量查询 - 只返回指定时间后更新的任务
+    if (since) {
+      const sinceDate = new Date(since);
+      if (!isNaN(sinceDate.getTime())) {
+        queryBuilder.andWhere('task.updatedAt > :since', { since: sinceDate });
+      }
     }
 
     queryBuilder

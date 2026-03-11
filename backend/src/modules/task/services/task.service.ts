@@ -43,8 +43,9 @@ export class TaskService {
     assigneeId?: string;
     page?: number;
     pageSize?: number;
+    since?: string; // Phase 1: 增量查询 - 只返回指定时间后更新的任务
   }): Promise<{ items: Task[]; total: number }> {
-    const { status, assigneeId, page = 1, pageSize = 10 } = options;
+    const { status, assigneeId, page = 1, pageSize = 10, since } = options;
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder("task")

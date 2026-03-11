@@ -40,6 +40,8 @@ export enum TaskPriority {
 @Index(['parentId'])
 @Index(['dueDate'])
 @Index(['deletedAt'])
+@Index(['updatedAt']) // Phase 1: 增量查询机制需要
+@Index(['assigneeId', 'updatedAt']) // Phase 1: 组合索引，优化增量查询
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
