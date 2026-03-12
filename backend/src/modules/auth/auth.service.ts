@@ -65,19 +65,19 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('用户名或密码错误，请重试');
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('用户名或密码错误，请重试');
     }
 
     // Check if user is active
     if (!user.isActive) {
-      throw new UnauthorizedException('User account is deactivated');
+      throw new UnauthorizedException('账号已被禁用，请联系管理员');
     }
 
     // Generate tokens
