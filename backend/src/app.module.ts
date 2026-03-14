@@ -8,6 +8,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { TaskModule } from './modules/task/task.module';
+import { TagModule } from './modules/tag/tag.module';
+import { CategoryModule } from './modules/category/category.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { CommentModule } from './modules/comment/comment.module';
 import { AgentsModule } from './modules/agents/agents.module';
@@ -64,6 +67,9 @@ import { appConfig, jwtConfig } from './config/app.config';
     AuthModule,
     UserModule,
     TaskModule,
+    TagModule,
+    CategoryModule,
+    StatisticsModule,
     NotificationModule,
     CommentModule,
     AgentsModule,

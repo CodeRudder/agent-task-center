@@ -7,7 +7,9 @@ import {
   DeleteDateColumn,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   JoinColumn,
+  JoinTable,
   VersionColumn,
   Index,
 } from 'typeorm';
@@ -16,6 +18,8 @@ import { Comment } from '../../comment/entities/comment.entity';
 import { Subtask } from './subtask.entity';
 import { TaskDependency } from './task-dependency.entity';
 import { TaskStatusHistory } from './task-status-history.entity';
+import { Tag } from '../../tag/entities/tag.entity';
+import { Category } from '../../category/entities/category.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -98,6 +102,15 @@ export class Task {
   dependencies: TaskDependency[];
 
   @OneToMany(() => TaskStatusHistory, (history) => history.task)
+  statusHistories: TaskStatusHistory[];
+
+  @ManyToMany(() => Tag, (tag) => tag.tasks)
+  @JoinTable()
+  tags: Tag[];
+
+  @ManyToMany(() => Category, (category) => category.tasks)
+  @JoinTable()
+  categories: Category[];
   statusHistories: TaskStatusHistory[];
 
   @Column({ name: 'parent_id', nullable: true })

@@ -65,6 +65,35 @@ export class TaskController {
       pageSize: pageSize ? Number(pageSize) : 10,
       since,
     });
+
+  @Get('incremental')
+  @ApiOperation({ summary: 'Incremental query for tasks (cursor-based pagination)' })
+  @ApiQuery({ name: 'since', required: false, description: 'Cursor - timestamp of last task from previous query' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of tasks per page (default: 20)' })
+  @ApiQuery({ name: 'status', required: false, enum: TaskStatus })
+  @ApiQuery({ name: 'priority', required: false })
+  @ApiQuery({ name: 'assigneeId', required: false })
+  @ApiQuery({ name: 'sortBy', required: false, description: 'Sort field: createdAt, updatedAt, dueDate (default: updatedAt)' })
+  @ApiQuery({ name: 'sortOrder', required: false, description: 'Sort order: ASC, DESC (default: DESC)' })
+  async findIncremental(
+    @Query('since') since?: string,
+    @Query('limit') limit?: number,
+    @Query('status') status?: TaskStatus,
+    @Query('priority') priority?: string,
+    @Query('assigneeId') assigneeId?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ): Promise<{ data: Task[]; hasMore: boolean; nextCursor: string | null }> {
+    return this.taskService.findIncremental({
+      since,
+      limit: limit ? Number(limit) : 20,
+      status,
+      priority,
+      assigneeId,
+      sortBy: sortBy || 'updatedAt',
+      sortOrder: sortOrder || 'DESC',
+    });
+  }
   }
 
   @Get(":id")

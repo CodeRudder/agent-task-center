@@ -250,6 +250,80 @@ export class TaskService {
     };
   }
 
+
+  /**
+   * 增量查询任务列表（Phase 1: 增量查询机制）
+   * 支持基于游标的分页、过滤、排序
+   */
+  async findIncremental(options: {
+    since?: string; // 游标（上次查询的最后一条记录的时间戳）
+    limit?: number; // 每页数量，默认20
+    status?: TaskStatus; // 状态过滤
+    priority?: string; // 优先级过滤
+    assigneeId?: string; // 负责人过滤
+    sortBy?: string; // 排序字段
+    sortOrder?: 'ASC' | 'DESC'; // 排序方向
+  }): Promise<{
+    data: Task[];
+    hasMore: boolean;
+    nextCursor: string | null;
+  }> {
+    const {
+      since,
+      limit = 20,
+      status,
+      priority,
+      assigneeId,
+      sortBy = 'updatedAt',
+      sortOrder = 'DESC',
+    } = options;
+
+    const queryBuilder = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.deletedAt IS NULL');
+
+    // 增量查询：只返回指定时间后更新的任务
+    if (since) {
+      queryBuilder.andWhere('task.updatedAt > :since', { since: new Date(since) });
+    }
+
+    // 状态过滤
+    if (status) {
+      queryBuilder.andWhere('task.status = :status', { status });
+    }
+
+    // 优先级过滤
+    if (priority) {
+      queryBuilder.andWhere('task.priority = :priority', { priority });
+    }
+
+    // 负责人过滤
+    if (assigneeId) {
+      queryBuilder.andWhere('task.assigneeId = :assigneeId', { assigneeId });
+    }
+
+    // 排序
+    queryBuilder.orderBy(`task.${sortBy}`, sortOrder);
+
+    // 分页：取limit + 1条数据，用于判断是否有更多数据
+    queryBuilder.take(limit + 1);
+
+    const tasks = await queryBuilder.getMany();
+
+    // 判断是否有更多数据
+    const hasMore = tasks.length > limit;
+    const data = hasMore ? tasks.slice(0, limit) : tasks;
+
+    // 计算下一页的游标（最后一条记录的updatedAt时间戳）
+    const nextCursor = data.length > 0 ? data[data.length - 1].updatedAt.toISOString() : null;
+
+    return {
+      data,
+      hasMore,
+      nextCursor,
+    };
+  }
   async remove(id: string): Promise<void> {
     const task = await this.findOne(id);
     await this.taskRepository.softDelete(id);
