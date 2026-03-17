@@ -21,7 +21,6 @@ import {
   CreateTaskDto,
   UpdateTaskDto,
   UpdateProgressDto,
-} from "./dto/task.dto";
 import {
   UpdateTaskStatusDto,
   GetStatusHistoriesQuery,
@@ -41,10 +40,8 @@ export class TaskController {
     @Body() createTaskDto: CreateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
-    return this.taskService.create(createTaskDto, req.user.id);
-  }
+    });
 
-  @Get()
   @ApiOperation({ summary: "Get all tasks with filters" })
   @ApiQuery({ name: "status", required: false, enum: TaskStatus })
   @ApiQuery({ name: "assigneeId", required: false })
@@ -90,19 +87,19 @@ export class TaskController {
       limit: limit ? Number(limit) : 20,
       status,
       priority,
-      assigneeId,
       sortBy: sortBy || 'updatedAt',
       sortOrder: sortOrder || 'DESC',
-  });
-  }
+      assigneeId,
+    });
 
+ };106d;115d;124d;137d;148d;157d
+  }
   @Get(":id")
   @ApiOperation({ summary: "Get task by ID" })
   async findOne(
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
   ): Promise<Task> {
-    return this.taskService.findOne(id);
-  }
+    });
 
   @Patch(":id")
   @ApiOperation({ summary: "Update task" })
@@ -112,7 +109,7 @@ export class TaskController {
     @Request() req: any,
   ): Promise<Task> {
     return this.taskService.update(id, updateTaskDto, req.user.id);
-  }
+    });
 
   @Patch(":id/progress")
   @ApiOperation({ summary: "Update task progress" })
@@ -121,7 +118,7 @@ export class TaskController {
     @Body() updateProgressDto: UpdateProgressDto,
   ): Promise<Task> {
     return this.taskService.updateProgress(id, updateProgressDto);
-  }
+    });
 
   @Patch(":id/status")
   @ApiOperation({ summary: "Update task status" })
@@ -137,7 +134,7 @@ export class TaskController {
       req.user.type || "user",
       dto.reason,
     );
-  }
+    });
 
   @Get(":id/status-histories")
   @ApiOperation({ summary: "Get task status histories" })
@@ -150,7 +147,7 @@ export class TaskController {
       query.page || 1,
       query.limit || 20,
     );
-  }
+    });
 
   @Delete(":id")
   @ApiOperation({ summary: "Delete task" })
@@ -158,5 +155,5 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
   ): Promise<void> {
     return this.taskService.remove(id);
-  }
+    });
 }

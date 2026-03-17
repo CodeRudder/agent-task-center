@@ -91,9 +91,7 @@ export class TaskController {
       status,
       priority,
       assigneeId,
-      sortBy: sortBy || 'updatedAt',
-      sortOrder: sortOrder || 'DESC',
-  });
+  }
   }
 
   @Get(":id")

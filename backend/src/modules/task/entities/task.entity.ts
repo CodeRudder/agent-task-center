@@ -111,7 +111,6 @@ export class Task {
   @ManyToMany(() => Category, (category) => category.tasks)
   @JoinTable()
   categories: Category[];
-  statusHistories: TaskStatusHistory[];
 
   @Column({ name: 'parent_id', nullable: true })
   parentId: string | null;
