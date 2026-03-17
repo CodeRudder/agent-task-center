@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Patch,
-  Put,
   Param,
   Delete,
   Request,
@@ -66,7 +65,6 @@ export class TaskController {
       pageSize: pageSize ? Number(pageSize) : 10,
       since,
     });
-  }
 
   @Get('incremental')
   @ApiOperation({ summary: 'Incremental query for tasks (cursor-based pagination)' })
@@ -96,6 +94,7 @@ export class TaskController {
       sortOrder: sortOrder || 'DESC',
     });
   }
+  }
 
   @Get(":id")
   @ApiOperation({ summary: "Get task by ID" })
@@ -103,16 +102,6 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
   ): Promise<Task> {
     return this.taskService.findOne(id);
-  }
-
-  @Put(":id")
-  @ApiOperation({ summary: "Update task (PUT)" })
-  async updatePut(
-    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
-    @Body() updateTaskDto: UpdateTaskDto,
-    @Request() req: any,
-  ): Promise<Task> {
-    return this.taskService.update(id, updateTaskDto, req.user.id);
   }
 
   @Patch(":id")

@@ -1,5 +1,6 @@
 import {
   Injectable,
+import { In } from 'typeorm';
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
@@ -59,14 +60,6 @@ export class TaskService {
     if (assigneeId) {
       queryBuilder.andWhere("task.assigneeId = :assigneeId", { assigneeId });
     }
-    // Phase 1: 增量查询 - 只返回指定时间后更新的任务
-    if (since) {
-      const sinceDate = new Date(since);
-      if (!isNaN(sinceDate.getTime())) {
-        queryBuilder.andWhere("task.updatedAt > :since", { since: sinceDate });
-      }
-    }
-
 
     queryBuilder
       .orderBy("task.createdAt", "DESC")
@@ -335,5 +328,40 @@ export class TaskService {
   async remove(id: string): Promise<void> {
     const task = await this.findOne(id);
     await this.taskRepository.softDelete(id);
+  }
+
+  async addTags(id: string, tagIds: string[]): Promise<Task> {
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      relations: ['tags'],
+    });
+    if (!task) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+    
+    const tags = await this.dataSource.getRepository('Tag').findBy({ id: In(tagIds) });
+    task.tags = [...(task.tags || []), ...tags];
+    
+    return this.taskRepository.save(task);
+  }
+
+  async setCategory(id: string, categoryId: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      relations: ['categories'],
+    });
+    if (!task) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+    
+    const category = await this.dataSource.getRepository('Category').findOne({
+      where: { id: categoryId },
+    });
+    if (!category) {
+      throw new NotFoundException(`Category with ID "${categoryId}" not found`);
+    }
+    task.categories = [category];
+    
+    return this.taskRepository.save(task);
   }
 }
