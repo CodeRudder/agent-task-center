@@ -2,15 +2,17 @@ version: '3.8'
 
 services:
   backend-prod:
-    image: localhost:5000/agent-task-system:v5.1-p1-17
+    image: localhost:5000/agent-task-system:v5.4-cors-fix
     container_name: agent-task-backend-prod
     restart: unless-stopped
-    ports:
-      - "8102:3000"
+    # 不对外暴露端口，只在内网访问
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       PORT: 3000
       API_PREFIX: api/v1
+      CORS_ORIGIN: http://localhost:5173,http://localhost:5100
       DB_HOST: postgres-prod
       DB_PORT: 5432
       DB_USERNAME: admin
@@ -34,11 +36,15 @@ services:
       retries: 3
 
   frontend-prod:
-    image: localhost:5000/agent-task-frontend:v5.1-p1-9
+    image: localhost:5000/agent-task-frontend:v5.3
     container_name: agent-task-frontend-prod
     restart: unless-stopped
-    ports:
-      - "8103:80"
+    # 不对外暴露端口，只在内网访问
+    expose:
+      - "80"
+    environment:
+      PORT: 80
+      BACKEND_HOST: backend-prod
     networks:
       - prod-network
     depends_on:
@@ -46,6 +52,25 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx-prod:
+    image: nginx:alpine
+    container_name: agent-task-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "5100:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - prod-network
+    depends_on:
+      - backend-prod
+      - frontend-prod
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -59,7 +84,7 @@ services:
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: agent_task_prod
     ports:
-      - "5433:5432"
+      - "5435:5432"
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     networks:
