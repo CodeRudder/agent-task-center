@@ -11,9 +11,13 @@ import { SubtaskService } from './services/subtask.service';
 import { SubtaskController } from './controllers/subtask.controller';
 import { TaskDependencyService } from './services/task-dependency.service';
 import { TaskDependencyController } from './controllers/task-dependency.controller';
+import { CommentModule } from '../comment/comment.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task, Subtask, TaskDependency, TaskStatusHistory])],
+  imports: [
+    TypeOrmModule.forFeature([Task, Subtask, TaskDependency, TaskStatusHistory]),
+    CommentModule,
+  ],
   controllers: [TaskController, SubtaskController, TaskDependencyController],
   providers: [TaskService, TaskStatusMachineService, SubtaskService, TaskDependencyService],
   exports: [TaskService, TaskStatusMachineService, SubtaskService, TaskDependencyService],

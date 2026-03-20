@@ -18,6 +18,7 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { TaskService } from "./services/task.service";
+import { CommentService } from "../comment/comment.service";
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -34,7 +35,10 @@ import { Task, TaskStatus } from "./entities/task.entity";
 @ApiBearerAuth()
 @Controller("tasks")
 export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+  constructor(
+    private readonly taskService: TaskService,
+    private readonly commentService: CommentService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: "Create a new task" })
@@ -169,5 +173,41 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
   ): Promise<void> {
     return this.taskService.remove(id);
+  }
+
+  // 评论相关路由
+  @Get(':id/comments')
+  @ApiOperation({ summary: 'Get comments for a task' })
+  async getComments(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    return this.commentService.findAllByTask(
+      id,
+      page ? Number(page) : 1,
+      pageSize ? Number(pageSize) : 20,
+    );
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: 'Create a comment for a task' })
+  async createComment(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() createCommentDto: any,
+    @Request() req: any,
+  ) {
+    return this.commentService.create(id, req.user.id, createCommentDto);
+  }
+
+  @Delete(':id/comments/:commentId')
+  @ApiOperation({ summary: 'Delete a comment' })
+  async deleteComment(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('commentId', new ParseUUIDPipe({ version: '4' })) commentId: string,
+    @Request() req: any,
+  ) {
+    await this.commentService.remove(commentId, req.user.id);
+    return { success: true };
   }
 }
