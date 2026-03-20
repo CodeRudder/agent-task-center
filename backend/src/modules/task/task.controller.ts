@@ -28,12 +28,16 @@ import {
   StatusHistoriesResponse,
 } from "./dto/update-task-status.dto";
 import { Task, TaskStatus } from "./entities/task.entity";
+import { CommentService } from "../comment/comment.service";
 
 @ApiTags("tasks")
 @ApiBearerAuth()
 @Controller("tasks")
 export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+  constructor(
+    private readonly taskService: TaskService,
+    private readonly commentService: CommentService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: "Create a new task" })
@@ -149,6 +153,39 @@ export class TaskController {
       id,
       query.page || 1,
       query.limit || 20,
+    );
+  }
+
+  @Get(":id/comments")
+  @ApiOperation({ summary: "Get task comments (compatibility endpoint)" })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "pageSize", required: false, type: Number })
+  async getTaskComments(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Query("page") page?: number,
+    @Query("pageSize") pageSize?: number,
+  ): Promise<{ items: any[]; total: number }> {
+    return this.commentService.findAllByTask(
+      id,
+      page ? Number(page) : 1,
+      pageSize ? Number(pageSize) : 20,
+    );
+  }
+
+  @Get(":id/history")
+  @ApiOperation({ summary: "Get task history (compatibility endpoint)" })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
+  async getTaskHistory(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Query("page") page?: number,
+    @Query("limit") limit?: number,
+  ): Promise<any> {
+    // 返回状态历史作为任务历史
+    return this.taskService.getStatusHistories(
+      id,
+      page || 1,
+      limit || 20,
     );
   }
 
