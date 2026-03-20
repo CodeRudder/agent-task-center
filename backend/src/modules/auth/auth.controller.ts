@@ -6,7 +6,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('auth')
-@Controller({ path: 'auth', version: '1' })
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -30,5 +30,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@Request() req: any) {
     return req.user;
+  }
+
+  @Post('logout')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout user (compatibility endpoint)' })
+  async logout() {
+    // JWT token logout typically handled client-side
+    // This endpoint exists for compatibility with frontend
+    return {
+      success: true,
+      message: 'Logged out successfully',
+    };
   }
 }

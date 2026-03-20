@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend-prod:
-    image: localhost:5000/agent-task-system:v5.4-cors-fix
+    image: localhost:5000/agent-task-system:v5.5-api-compat
     container_name: agent-task-backend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
@@ -36,7 +36,7 @@ services:
       retries: 3
 
   frontend-prod:
-    image: localhost:5000/agent-task-frontend:v5.3
+    image: localhost:5000/agent-task-frontend:v5.4-permanent
     container_name: agent-task-frontend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
@@ -51,7 +51,7 @@ services:
       backend-prod:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 30s
       timeout: 10s
       retries: 3
