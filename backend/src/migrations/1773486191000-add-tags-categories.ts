@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class AddTagsCategories1234567890 implements MigrationInterface {
+export class AddTagsCategories1773486191000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 创建tags表
     await queryRunner.createTable(

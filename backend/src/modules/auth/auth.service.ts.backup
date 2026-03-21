@@ -47,6 +47,7 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
+      name, // 添加 name 字段
       displayName: name,
       username, // 添加自动生成的username
     });

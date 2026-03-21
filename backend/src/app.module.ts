@@ -15,6 +15,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { CommentModule } from './modules/comment/comment.module';
 import { AgentsModule } from './modules/agents/agents.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { VoteModule } from './modules/vote/vote.module';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -75,6 +76,7 @@ import { appConfig, jwtConfig } from './config/app.config';
     CommentModule,
     AgentsModule,
     AdminModule,
+    VoteModule,
   ],
   controllers: [AppController],
   providers: [

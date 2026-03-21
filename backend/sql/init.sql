@@ -76,9 +76,10 @@ CREATE TYPE task_status_history_changed_by_type_enum AS ENUM ('user', 'agent');
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
+  username VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  avatar VARCHAR(255),
+  display_name VARCHAR(255) NOT NULL,
+  avatar_url VARCHAR(255),
   role VARCHAR(50) DEFAULT 'user',
   feishu_open_id VARCHAR(255),
   is_active BOOLEAN DEFAULT true,
