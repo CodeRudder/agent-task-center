@@ -3,10 +3,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { VoteType } from './vote.entity';
 
 export class CreateVoteDto {
-  @ApiProperty({ description: 'Task ID', example: 'uuid' })
-  @IsUUID()
-  taskId: string;
-
   @ApiProperty({ 
     description: 'Vote type', 
     enum: VoteType,

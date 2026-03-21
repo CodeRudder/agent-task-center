@@ -30,7 +30,6 @@ import {
   StatusHistoriesResponse,
 } from "./dto/update-task-status.dto";
 import { Task, TaskStatus } from "./entities/task.entity";
-import { CommentService } from "../comment/comment.service";
 
 @ApiTags("tasks")
 @ApiBearerAuth()
