@@ -28,11 +28,12 @@ export class TaskService {
   async findAll(options: {
     status?: TaskStatus;
     assigneeId?: string;
+    search?: string; // 搜索参数
     page?: number;
     pageSize?: number;
     since?: string; // Phase 1: 增量查询 - 只返回指定时间后更新的任务
   }): Promise<{ items: Task[]; total: number }> {
-    const { status, assigneeId, page = 1, pageSize = 10, since } = options;
+    const { status, assigneeId, search, page = 1, pageSize = 10, since } = options;
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
@@ -45,6 +46,14 @@ export class TaskService {
 
     if (assigneeId) {
       queryBuilder.andWhere('task.assigneeId = :assigneeId', { assigneeId });
+    }
+
+    // 搜索功能：支持中英文模糊搜索
+    if (search) {
+      queryBuilder.andWhere(
+        '(task.title ILIKE :search OR task.description ILIKE :search)',
+        { search: `%${search}%` }
+      );
     }
 
     // Phase 1: 增量查询 - 只返回指定时间后更新的任务

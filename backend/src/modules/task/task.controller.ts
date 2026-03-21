@@ -53,12 +53,14 @@ export class TaskController {
   @ApiOperation({ summary: "Get all tasks with filters" })
   @ApiQuery({ name: "status", required: false, enum: TaskStatus })
   @ApiQuery({ name: "assigneeId", required: false })
+  @ApiQuery({ name: "search", required: false, description: "Search in title and description" })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "pageSize", required: false, type: Number })
   @ApiQuery({ name: "since", required: false, description: "Incremental query - only return tasks updated after this timestamp (ISO 8601)" })
   async findAll(
     @Query("status") status?: TaskStatus,
     @Query("assigneeId") assigneeId?: string,
+    @Query("search") search?: string,
     @Query("page") page?: number,
     @Query("pageSize") pageSize?: number,
     @Query("since") since?: string,
@@ -66,6 +68,7 @@ export class TaskController {
     return this.taskService.findAll({
       status,
       assigneeId,
+      search,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
       since,
