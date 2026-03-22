@@ -274,4 +274,26 @@ export class AuthService {
       message: '登出成功',
     };
   }
+
+  /**
+   * 获取登录尝试次数
+   * 用于前端检查账户是否被锁定
+   */
+  async getLoginAttempts(email: string): Promise<{
+    email: string;
+    attempts: number;
+    maxAttempts: number;
+    isLocked: boolean;
+    lockUntil: number | null;
+  }> {
+    const attempt = this.loginAttempts.get(email);
+
+    return {
+      email,
+      attempts: attempt?.count || 0,
+      maxAttempts: this.MAX_LOGIN_ATTEMPTS,
+      isLocked: !!(attempt && attempt.lockUntil && Date.now() < attempt.lockUntil),
+      lockUntil: attempt?.lockUntil || null,
+    };
+  }
 }

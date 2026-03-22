@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend-prod:
-    image: localhost:5000/agent-task-system:v5.5-api-compat
+    image: localhost:5000/agent-task-system:v5.5
     container_name: agent-task-backend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
@@ -36,12 +36,14 @@ services:
       retries: 3
 
   frontend-prod:
-    image: localhost:5000/agent-task-frontend:v5.4-permanent
+    image: localhost:5000/agent-task-frontend:v5.5
     container_name: agent-task-frontend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
     expose:
       - "80"
+    volumes:
+      - ./frontend-prod-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     environment:
       PORT: 80
       BACKEND_HOST: backend-prod

@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     ports:
       - "3002:3000"
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
     environment:
       NODE_ENV: development
       PORT: 3000
@@ -32,6 +35,41 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  frontend-dev:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: agent-task-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=/api/v1
+    networks:
+      - agent-task-network
+    depends_on:
+      backend-dev:
+        condition: service_healthy
+
+  nginx-dev:
+    image: nginx:alpine
+    container_name: agent-task-nginx-dev
+    restart: unless-stopped
+    ports:
+      - "3100:80"
+    volumes:
+      - ../frontend/dist:/usr/share/nginx/html
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - agent-task-network
+    depends_on:
+      - backend-dev
+      - frontend-dev
 
   postgres:
     image: postgres:15-alpine
