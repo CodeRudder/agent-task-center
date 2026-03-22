@@ -44,6 +44,28 @@ export class User {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  // V5.6新增字段
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  department: string;
+
+  @Column({ nullable: true })
+  position: string;
+
+  @Column({ type: 'text', nullable: true })
+  bio: string;
+
+  @Column({ type: 'jsonb', default: {} })
+  preferences: Record<string, any>;
+
+  @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
+  lastLoginAt: Date;
+
+  @Column({ name: 'login_count', default: 0 })
+  loginCount: number;
+
   @OneToMany(() => Task, (task) => task.assignee)
   tasks: Task[];
 
