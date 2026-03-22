@@ -7,6 +7,7 @@ import {
   Query,
   Request,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
@@ -20,6 +21,7 @@ import {
   UserListResponseDto,
   UserDetailResponseDto,
 } from './dto/user-response.dto';
+import { PermissionGuard, RequirePermission } from './permission.guard';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -52,8 +54,11 @@ export class UserController {
   }
 
   @Put(':id/role')
+  @UseGuards(PermissionGuard)
+  @RequirePermission('user', 'update')
   @ApiOperation({ summary: '更新用户角色' })
   @ApiResponse({ status: 200, description: '成功' })
+  @ApiResponse({ status: 403, description: '权限不足' })
   @ApiResponse({ status: 404, description: '用户不存在' })
   async updateRole(
     @Param('id', ParseUUIDPipe) id: string,
@@ -63,8 +68,11 @@ export class UserController {
   }
 
   @Put(':id/status')
+  @UseGuards(PermissionGuard)
+  @RequirePermission('user', 'update')
   @ApiOperation({ summary: '更新用户状态' })
   @ApiResponse({ status: 200, description: '成功' })
+  @ApiResponse({ status: 403, description: '权限不足' })
   @ApiResponse({ status: 404, description: '用户不存在' })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
