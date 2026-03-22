@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   backend-dev:
-    image: localhost:5000/agent-task-system:v5.1-test
-    container_name: agent-task-dev
+    image: localhost:5000/agent-task-system:v5.5
+    container_name: agent-task-backend-dev
     restart: unless-stopped
     ports:
       - "3002:3000"
