@@ -12,6 +12,7 @@ import { Permission } from './entities/permission.entity';
 import { RolePermission } from './entities/role-permission.entity';
 import { UserOperationLog } from './entities/user-operation-log.entity';
 import { UserPreference } from './entities/user-preference.entity';
+import { PermissionGuard } from './permission.guard';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { UserPreference } from './entities/user-preference.entity';
     ]),
   ],
   controllers: [UserController, PermissionController, RoleController],
-  providers: [UserService, PermissionService],
+  providers: [UserService, PermissionService, PermissionGuard],
   exports: [UserService, PermissionService],
 })
 export class UserModule {}
