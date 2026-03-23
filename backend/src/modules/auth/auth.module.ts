@@ -16,13 +16,13 @@ import { User } from '../user/entities/user.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.secret'),
+        secret: configService.get<string>('JWT_SECRET') || 'your-super-secret-jwt-key-change-in-production',
         signOptions: {
           expiresIn: configService.get<string>('jwt.expiration', '7d'),
         },
       }),
       inject: [ConfigService],
-    }),
+    }).
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy],
