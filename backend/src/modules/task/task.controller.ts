@@ -54,6 +54,7 @@ export class TaskController {
   @ApiQuery({ name: "status", required: false, enum: TaskStatus })
   @ApiQuery({ name: "assigneeId", required: false })
   @ApiQuery({ name: "search", required: false, description: "Search in title and description" })
+  @ApiQuery({ name: "shortId", required: false, type: Number, description: "V5.6: Short ID for quick task lookup (e.g., 12345)" })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "pageSize", required: false, type: Number })
   @ApiQuery({ name: "since", required: false, description: "Incremental query - only return tasks updated after this timestamp (ISO 8601)" })
@@ -61,6 +62,7 @@ export class TaskController {
     @Query("status") status?: TaskStatus,
     @Query("assigneeId") assigneeId?: string,
     @Query("search") search?: string,
+    @Query("shortId") shortId?: number,
     @Query("page") page?: number,
     @Query("pageSize") pageSize?: number,
     @Query("since") since?: string,
@@ -69,6 +71,7 @@ export class TaskController {
       status,
       assigneeId,
       search,
+      shortId: shortId ? Number(shortId) : undefined,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
       since,

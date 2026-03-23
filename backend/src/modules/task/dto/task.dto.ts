@@ -120,6 +120,12 @@ export class QueryTaskDto {
   @IsUUID()
   assigneeId?: string;
 
+  @ApiPropertyOptional({ description: 'Short ID for quick task lookup (e.g., #12345)' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  shortId?: number;
+
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
   @IsInt()

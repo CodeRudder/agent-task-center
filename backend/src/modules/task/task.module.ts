@@ -12,10 +12,11 @@ import { SubtaskController } from './controllers/subtask.controller';
 import { TaskDependencyService } from './services/task-dependency.service';
 import { TaskDependencyController } from './controllers/task-dependency.controller';
 import { CommentModule } from '../comment/comment.module';
+import { Vote } from '../vote/vote.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, Subtask, TaskDependency, TaskStatusHistory]),
+    TypeOrmModule.forFeature([Task, Subtask, TaskDependency, TaskStatusHistory, Vote]),
     CommentModule,
   ],
   controllers: [TaskController, SubtaskController, TaskDependencyController],

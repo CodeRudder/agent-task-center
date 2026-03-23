@@ -46,9 +46,18 @@ export enum TaskPriority {
 @Index(['deletedAt'])
 @Index(['updatedAt']) // Phase 1: 增量查询机制需要
 @Index(['assigneeId', 'updatedAt']) // Phase 1: 组合索引，优化增量查询
+@Index(['shortId']) // V5.6: 短ID索引，优化查询性能
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ 
+    name: 'short_id', 
+    type: 'bigint', 
+    generated: 'increment',
+    unique: true 
+  })
+  shortId: number;
 
   @Column()
   title: string;

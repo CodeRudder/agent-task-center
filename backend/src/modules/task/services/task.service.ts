@@ -13,6 +13,7 @@ import {
   UpdateTaskDto,
   UpdateProgressDto,
 } from "../dto/task.dto";
+import { Vote, VoteType } from "../../vote/vote.entity";
 
 @Injectable()
 export class TaskService {
@@ -21,6 +22,8 @@ export class TaskService {
     private taskRepository: Repository<Task>,
     @InjectRepository(TaskStatusHistory)
     private statusHistoryRepository: Repository<TaskStatusHistory>,
+    @InjectRepository(Vote)
+    private voteRepository: Repository<Vote>,
     private statusMachine: TaskStatusMachineService,
     private dataSource: DataSource,
   ) {}
@@ -85,7 +88,27 @@ export class TaskService {
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
-    return { items, total };
+    // 添加投票统计查询
+    const itemsWithStats = await Promise.all(
+      items.map(async (task) => {
+        const upvotes = await this.voteRepository.count({
+          where: { taskId: task.id, voteType: VoteType.UPVOTE }
+        });
+        const downvotes = await this.voteRepository.count({
+          where: { taskId: task.id, voteType: VoteType.DOWNVOTE }
+        });
+        return {
+          ...task,
+          voteStats: {
+            upvotes,
+            downvotes,
+            totalVotes: upvotes + downvotes,
+          },
+        };
+      })
+    );
+
+    return { items: itemsWithStats, total };
   }
 
   async findOne(id: string): Promise<Task> {

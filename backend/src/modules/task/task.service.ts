@@ -29,16 +29,30 @@ export class TaskService {
     status?: TaskStatus;
     assigneeId?: string;
     search?: string; // 搜索参数
+    shortId?: number; // V5.6: 短ID精确查询
     page?: number;
     pageSize?: number;
     since?: string; // Phase 1: 增量查询 - 只返回指定时间后更新的任务
   }): Promise<{ items: Task[]; total: number }> {
-    const { status, assigneeId, search, page = 1, pageSize = 10, since } = options;
+    const { status, assigneeId, search, shortId, page = 1, pageSize = 10, since } = options;
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.deletedAt IS NULL');
+
+    // V5.6: 短ID精确查询（优先级最高）
+    if (shortId) {
+      queryBuilder.andWhere('task.shortId = :shortId', { shortId });
+      
+      // 短ID查询只返回一个结果，忽略分页
+      const task = await queryBuilder.getOne();
+      if (task) {
+        return { items: [task], total: 1 };
+      } else {
+        return { items: [], total: 0 };
+      }
+    }
 
     if (status) {
       queryBuilder.andWhere('task.status = :status', { status });
