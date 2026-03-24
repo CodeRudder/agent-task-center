@@ -4,3 +4,6 @@
 [submodule "ops"]
 	path = ops
 	url = git@github.com:CodeRudder/agent-task-center-ops.git
+[submodule "qa"]
+	path = qa
+	url = git@github.com:CodeRudder/agent-task-center-qa.git
