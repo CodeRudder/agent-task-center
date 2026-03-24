@@ -1,3 +1,6 @@
 [submodule "frontend"]
 	path = frontend
 	url = git@github.com:CodeRudder/agent-task-center-frontend.git
+[submodule "ops"]
+	path = ops
+	url = git@github.com:CodeRudder/agent-task-center-ops.git
