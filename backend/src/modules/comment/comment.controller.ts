@@ -2,8 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
-  Patch,
   Param,
   Delete,
   Request,
@@ -20,51 +20,49 @@ import { Comment } from './entities/comment.entity';
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  @Post('task/:taskId')
-  @ApiOperation({ summary: 'Create a comment for a task' })
+  // 创建评论
+  @Post()
+  @ApiOperation({ summary: '创建评论' })
   async create(
-    @Param('taskId') taskId: string,
-    @Body() createCommentDto: CreateCommentDto,
     @Request() req: any,
+    @Body() createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
-    return this.commentService.create(taskId, req.user.id, createCommentDto);
+    return await this.commentService.create(req.user.id, createCommentDto);
   }
 
+  // 查询任务的评论列表
   @Get('task/:taskId')
-  @ApiOperation({ summary: 'Get all comments for a task' })
+  @ApiOperation({ summary: '查询任务的评论列表' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
-  async findAllByTask(
+  async findByTaskId(
     @Param('taskId') taskId: string,
-    @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
-  ): Promise<{ items: Comment[]; total: number }> {
-    return this.commentService.findAllByTask(
+    @Query('page') page: string = '1',
+    @Query('pageSize') pageSize: string = '20',
+  ) {
+    return await this.commentService.findByTaskId(
       taskId,
-      page ? Number(page) : 1,
-      pageSize ? Number(pageSize) : 20,
+      parseInt(page, 10),
+      parseInt(pageSize, 10),
     );
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get comment by ID' })
-  async findOne(@Param('id') id: string): Promise<Comment> {
-    return this.commentService.findOne(id);
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update comment' })
+  // 更新评论
+  @Put(':id')
+  @ApiOperation({ summary: '更新评论' })
   async update(
+    @Request() req: any,
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Request() req: any,
   ): Promise<Comment> {
-    return this.commentService.update(id, req.user.id, updateCommentDto);
+    return await this.commentService.update(req.user.id, id, updateCommentDto);
   }
 
+  // 删除评论
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete comment' })
-  async remove(@Param('id') id: string, @Request() req: any): Promise<void> {
-    return this.commentService.remove(id, req.user.id);
+  @ApiOperation({ summary: '删除评论' })
+  async remove(@Request() req: any, @Param('id') id: string) {
+    await this.commentService.remove(req.user.id, id);
+    return { message: '评论已删除' };
   }
 }

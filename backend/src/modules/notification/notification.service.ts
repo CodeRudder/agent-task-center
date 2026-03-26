@@ -220,4 +220,55 @@ export class NotificationService {
 
     return await this.notificationRepository.save(notification);
   }
+
+  /**
+   * 创建@提及通知
+   * @param comment 评论对象
+   * @param mentionedUserId 被@的用户ID
+   * @returns 创建的通知对象
+   */
+  async createCommentMentionNotification(
+    comment: any,
+    mentionedUserId: string,
+  ): Promise<Notification> {
+    const notification = this.notificationRepository.create({
+      recipientId: mentionedUserId,
+      senderId: comment.authorId,
+      type: NotificationType.COMMENT_MENTION,
+      title: 'You were mentioned in a comment',
+      content: `You were mentioned in a comment on task "${comment.task?.title || 'Unknown task'}".`,
+      relatedTaskId: comment.taskId,
+      relatedCommentId: comment.id,
+    });
+
+    return await this.notificationRepository.save(notification);
+  }
+
+  /**
+   * 创建评论回复通知
+   * @param comment 回复评论对象
+   * @param parentComment 父评论对象
+   * @returns 创建的通知对象
+   */
+  async createCommentReplyNotification(
+    comment: any,
+    parentComment: any,
+  ): Promise<Notification | null> {
+    // 如果回复自己的评论，不发送通知
+    if (comment.authorId === parentComment.authorId) {
+      return null;
+    }
+
+    const notification = this.notificationRepository.create({
+      recipientId: parentComment.authorId,
+      senderId: comment.authorId,
+      type: NotificationType.COMMENT_REPLY,
+      title: 'Your comment received a reply',
+      content: `Your comment on task "${comment.task?.title || 'Unknown task'}" received a reply.`,
+      relatedTaskId: comment.taskId,
+      relatedCommentId: comment.id,
+    });
+
+    return await this.notificationRepository.save(notification);
+  }
 }

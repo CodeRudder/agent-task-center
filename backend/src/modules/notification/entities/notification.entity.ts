@@ -21,6 +21,8 @@ export enum NotificationType {
   SYSTEM_MESSAGE = 'system_message',
   AGENT_MESSAGE = 'agent_message',
   COMMENT_ADDED = 'comment_added',
+  COMMENT_MENTION = 'comment_mention',  // @提及通知
+  COMMENT_REPLY = 'comment_reply',      // 评论回复通知
 }
 
 @Entity('notifications')
