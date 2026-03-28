@@ -27,6 +27,16 @@ export class CreateCommentDto {
   @IsArray()
   @IsUUID('4', { each: true })
   mentions?: string[];
+
+  @ApiPropertyOptional({ 
+    example: ['user-uuid-1', 'user-uuid-2'], 
+    description: '需要通知的用户ID列表',
+    type: [String]
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  notifyUsers?: string[];
 }
 
 export class UpdateCommentDto {

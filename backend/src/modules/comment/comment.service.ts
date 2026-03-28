@@ -25,7 +25,7 @@ export class CommentService {
 
   // 创建评论
   async create(userId: string, createCommentDto: CreateCommentDto): Promise<Comment> {
-    const { taskId, content, parentId, mentions } = createCommentDto;
+    const { taskId, content, parentId, mentions, notifyUsers } = createCommentDto;
 
     // 自动解析@提及，合并前端传递的mentions
     const parsedMentions = this.parseMentions(content);
@@ -199,7 +199,7 @@ export class CommentService {
 
   // 解析评论中的@提及
   parseMentions(content: string): string[] {
-    const mentionRegex = /@([a-zA-Z0-9_-]+)/g; // 只匹配用户名部分（字母、数字、下划线、连字符）
+    const mentionRegex = /@([a-zA-Z0-9_.-]+)/g; // 只匹配用户名部分（字母、数字、下划线、连字符、点号）
     const mentions: string[] = [];
     let match;
 

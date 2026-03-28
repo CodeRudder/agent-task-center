@@ -8,6 +8,7 @@ import { CommentHistory } from './entities/comment-history.entity';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { NotificationService } from '../notification/notification.service';
+import { User } from '../user/entities/user.entity';
 
 describe('CommentService', () => {
   let service: CommentService;
@@ -82,6 +83,10 @@ describe('CommentService', () => {
     createCommentReplyNotification: jest.fn(),
   };
 
+  const mockUserRepository = {
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -97,6 +102,10 @@ describe('CommentService', () => {
         {
           provide: getRepositoryToken(CommentHistory),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockUserRepository,
         },
         {
           provide: DataSource,

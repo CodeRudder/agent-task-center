@@ -36,7 +36,7 @@ services:
       retries: 3
 
   frontend-prod:
-    image: localhost:5000/agent-task-frontend:v5.5
+    image: localhost:5000/agent-task-frontend:v5.1-p2-merged
     container_name: agent-task-frontend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
