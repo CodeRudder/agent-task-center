@@ -92,6 +92,16 @@ export class AgentsService {
         const statistics = await this.getAgentStatistics(agent.id, PeriodType.ALL_TIME);
         const lastActiveAt = await this.getLastActiveAt(agent.id);
 
+        // V5.2 P0 Fix: 计算tokenStatus
+        let tokenStatus = 'none';
+        if (agent.apiToken) {
+          if (agent.apiTokenExpiresAt && new Date() > agent.apiTokenExpiresAt) {
+            tokenStatus = 'revoked';
+          } else {
+            tokenStatus = 'generated';
+          }
+        }
+
         return {
           id: agent.id,
           name: agent.name,
@@ -99,7 +109,11 @@ export class AgentsService {
           description: agent.description,
           capabilities: agent.capabilities || [],
           status: agent.status,
-          maxConcurrentTasks: agent.maxConcurrentTasks,
+          tokenStatus, // V5.2 P0 Fix: 添加tokenStatus字段
+          currentTasks: load.currentTasks, // V5.2 P0 Fix: 添加currentTasks字段
+          maxTasks: agent.maxConcurrentTasks, // V5.2 P0 Fix: 映射为maxTasks
+          maxConcurrentTasks: agent.maxConcurrentTasks, // 保留原字段以兼容
+          tags: agent.capabilities || [], // V5.2 P0 Fix: 添加tags字段
           load,
           statistics,
           lastActiveAt,
@@ -150,6 +164,16 @@ export class AgentsService {
     const recentHistory = await this.getRecentHistory(agent.id);
     const lastActiveAt = await this.getLastActiveAt(agent.id);
 
+    // V5.2 P0 Fix: 计算tokenStatus
+    let tokenStatus = 'none';
+    if (agent.apiToken) {
+      if (agent.apiTokenExpiresAt && new Date() > agent.apiTokenExpiresAt) {
+        tokenStatus = 'revoked';
+      } else {
+        tokenStatus = 'generated';
+      }
+    }
+
     return {
       id: agent.id,
       name: agent.name,
@@ -157,12 +181,16 @@ export class AgentsService {
       description: agent.description,
       capabilities: agent.capabilities || [],
       status: agent.status,
-      maxConcurrentTasks: agent.maxConcurrentTasks,
+      tokenStatus, // V5.2 P0 Fix: 添加tokenStatus字段
+      currentTasks: load.currentTasks, // V5.2 P0 Fix: 当前任务数量（数字）
+      maxTasks: agent.maxConcurrentTasks, // V5.2 P0 Fix: 映射为maxTasks
+      maxConcurrentTasks: agent.maxConcurrentTasks, // 保留原字段以兼容
+      tags: agent.capabilities || [], // V5.2 P0 Fix: 添加tags字段
       load: {
         currentTasks: load.currentTasks,
         loadPercentage: load.loadPercentage,
       },
-      currentTasks,
+      currentTaskList: currentTasks, // V5.2 P0 Fix: 重命名为currentTaskList避免冲突
       statistics: {
         allTime: statistics,
         thisMonth: await this.getAgentStatistics(agent.id, PeriodType.MONTH),

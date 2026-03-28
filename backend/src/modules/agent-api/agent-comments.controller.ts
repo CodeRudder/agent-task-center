@@ -52,9 +52,12 @@ export class AgentCommentsController {
     }
 
     const comment = await this.commentService.create(
-      taskId,
       req.user.id,
-      createCommentDto,
+      {
+        taskId,
+        content: createCommentDto.content,
+        mentions: createCommentDto.mentions?.map((m) => m.userId),
+      },
     );
 
     return {
@@ -87,7 +90,7 @@ export class AgentCommentsController {
     }
 
     const { page = 1, pageSize = 20 } = query;
-    const result = await this.commentService.findAllByTask(taskId, page, pageSize);
+    const result = await this.commentService.findByTaskId(taskId, page, pageSize);
 
     return {
       success: true,
