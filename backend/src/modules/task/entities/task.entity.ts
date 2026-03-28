@@ -20,6 +20,7 @@ import { TaskDependency } from './task-dependency.entity';
 import { TaskStatusHistory } from './task-status-history.entity';
 import { Tag } from '../../tag/entities/tag.entity';
 import { Category } from '../../category/entities/category.entity';
+import { Project } from '../../project/entities/project.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -46,6 +47,7 @@ export enum TaskPriority {
 @Index(['deletedAt'])
 @Index(['updatedAt']) // Phase 1: 增量查询机制需要
 @Index(['assigneeId', 'updatedAt']) // Phase 1: 组合索引，优化增量查询
+@Index(['projectId']) // V5.4: 项目管理需要
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -121,6 +123,13 @@ export class Task {
 
   @OneToMany(() => Task, (task) => task.parent)
   subtasksAsParent: Task[];
+
+  @Column({ name: 'project_id', nullable: true })
+  projectId: string | null;
+
+  @ManyToOne(() => Project, (project) => project.tasks)
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any> | null;

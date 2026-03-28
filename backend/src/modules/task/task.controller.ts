@@ -30,6 +30,7 @@ import {
   StatusHistoriesResponse,
 } from "./dto/update-task-status.dto";
 import { Task, TaskStatus } from "./entities/task.entity";
+import { Public } from "../../common/decorators/public.decorator";
 
 @ApiTags("tasks")
 @ApiBearerAuth()
@@ -46,6 +47,7 @@ export class TaskController {
     @Body() createTaskDto: CreateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
+    // JWT认证后req.user一定存在，直接使用req.user.id
     return this.taskService.create(createTaskDto, req.user.id);
   }
 
@@ -178,8 +180,8 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Query("page") page?: number,
     @Query("pageSize") pageSize?: number,
-  ): Promise<{ items: any[]; total: number }> {
-    return this.commentService.findAllByTask(
+  ): Promise<{ total: number; page: number; pageSize: number; comments: any[] }> {
+    return this.commentService.findByTaskId(
       id,
       page ? Number(page) : 1,
       pageSize ? Number(pageSize) : 20,
@@ -219,7 +221,7 @@ export class TaskController {
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
   ) {
-    return this.commentService.findAllByTask(
+    return this.commentService.findByTaskId(
       id,
       page ? Number(page) : 1,
       pageSize ? Number(pageSize) : 20,
@@ -233,7 +235,10 @@ export class TaskController {
     @Body() createCommentDto: any,
     @Request() req: any,
   ) {
-    return this.commentService.create(id, req.user.id, createCommentDto);
+    return this.commentService.create(req.user.id, {
+      ...createCommentDto,
+      taskId: id,
+    });
   }
 
   @Delete(':id/comments/:commentId')

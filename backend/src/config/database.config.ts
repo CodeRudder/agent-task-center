@@ -8,7 +8,7 @@ const databaseConfig = registerAs('database', () => ({
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_DATABASE || 'agent_task_system',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: process.env.NODE_ENV !== 'production',
+  synchronize: false, // 禁用自动建表，使用SQL脚本管理
 }));
 
 export default databaseConfig;
