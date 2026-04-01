@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Get, Request, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, AuthResponseDto, RefreshTokenDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, AuthResponseDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -58,5 +58,19 @@ export class AuthController {
   @ApiOperation({ summary: 'Get login attempts count' })
   async getLoginAttempts(@Query('email') email: string): Promise<any> {
     return this.authService.getLoginAttempts(email);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset email' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<any> {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<any> {
+    return this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.newPassword);
   }
 }

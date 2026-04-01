@@ -54,3 +54,23 @@ export class RefreshTokenDto {
   @IsString()
   refreshToken: string;
 }
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'e5ef11d62ed0fee321242acb0635d5ddd4a8a2f9410e15ea1f1eec68f612a6cc' })
+  @IsString()
+  @MinLength(64)
+  @MaxLength(128)
+  token: string;
+
+  @ApiProperty({ example: 'newPassword123' })
+  @IsString()
+  @MinLength(6)
+  @MaxLength(20)
+  newPassword: string;
+}

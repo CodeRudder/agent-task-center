@@ -209,4 +209,28 @@ export class CommentService {
 
     return mentions;
   }
+
+  // 获取评论历史记录
+  async getHistory(userId: string, commentId: string) {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('评论不存在');
+    }
+
+    // 权限检查：只有评论作者可以查看历史
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException('无权查看此评论历史');
+    }
+
+    const histories = await this.historyRepository.find({
+      where: { commentId },
+      relations: ['editor'],
+      order: { editedAt: 'DESC' },
+    });
+
+    return histories;
+  }
 }

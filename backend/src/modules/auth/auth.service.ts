@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../user/entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { RegisterDto, LoginDto, AuthResponseDto } from './dto/auth.dto';
 
 // 防暴力破解配置
@@ -22,6 +23,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(PasswordResetToken)
+    private passwordResetTokenRepository: Repository<PasswordResetToken>,
     private jwtService: JwtService,
   ) {}
 
@@ -294,6 +297,103 @@ export class AuthService {
       maxAttempts: this.MAX_LOGIN_ATTEMPTS,
       isLocked: !!(attempt && attempt.lockUntil && Date.now() < attempt.lockUntil),
       lockUntil: attempt?.lockUntil || null,
+    };
+  }
+
+  /**
+   * 忘记密码 - 发送密码重置邮件
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    // 1. 检查用户是否存在
+    const user = await this.userRepository.findOne({ where: { email } });
+    
+    if (!user) {
+      // 为了安全，即使用户不存在也返回成功消息
+      // 防止通过此接口探测用户邮箱
+      console.log(`[forgotPassword] Email not found: ${email}`);
+      return {
+        message: '如果该邮箱已注册，您将收到密码重置邮件',
+      };
+    }
+
+    // 2. 生成随机 token（32 字节，转换为十六进制字符串）
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // 3. 设置过期时间（1 小时后）
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    // 4. 保存到数据库
+    const passwordResetToken = this.passwordResetTokenRepository.create({
+      email,
+      token: resetToken,
+      expiresAt,
+      isUsed: false,
+    });
+
+    await this.passwordResetTokenRepository.save(passwordResetToken);
+
+    // 5. 发送邮件（暂时使用控制台日志）
+    // TODO: 配置 SMTP 服务器后，替换为实际邮件发送
+    const resetLink = `http://localhost:3002/reset-password?token=${resetToken}`;
+    console.log(`[forgotPassword] Password reset link for ${email}:`);
+    console.log(`[forgotPassword] ${resetLink}`);
+    console.log(`[forgotPassword] Token expires at: ${expiresAt.toISOString()}`);
+
+    return {
+      message: '如果该邮箱已注册，您将收到密码重置邮件',
+    };
+  }
+
+  /**
+   * 重置密码 - 使用 token 重置用户密码
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    // 1. 查找 token
+    const passwordResetToken = await this.passwordResetTokenRepository.findOne({
+      where: { token },
+    });
+
+    if (!passwordResetToken) {
+      throw new UnauthorizedException('无效的重置链接');
+    }
+
+    // 2. 检查 token 是否已使用
+    if (passwordResetToken.isUsed) {
+      throw new UnauthorizedException('该重置链接已被使用');
+    }
+
+    // 3. 检查 token 是否过期
+    const now = new Date();
+    if (passwordResetToken.expiresAt < now) {
+      throw new UnauthorizedException('重置链接已过期，请重新申请');
+    }
+
+    // 4. 查找用户
+    const user = await this.userRepository.findOne({
+      where: { email: passwordResetToken.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('用户不存在');
+    }
+
+    // 5. 加密新密码
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 6. 更新用户密码
+    user.password = hashedPassword;
+    await this.userRepository.save(user);
+
+    // 7. 标记 token 为已使用
+    passwordResetToken.isUsed = true;
+    await this.passwordResetTokenRepository.save(passwordResetToken);
+
+    console.log(`[resetPassword] Password reset successful for user: ${user.email}`);
+
+    return {
+      message: '密码重置成功，请使用新密码登录',
     };
   }
 }

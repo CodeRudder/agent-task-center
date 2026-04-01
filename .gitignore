@@ -43,5 +43,12 @@ tmp/
 temp/
 .cache/
 
+# PostgreSQL Data
+postgres-data/
+
+# Workspace Submodules
+workspace-bp-business-analyst/
+workspace-*/
+
 # Docker
 docker-compose.override.yml

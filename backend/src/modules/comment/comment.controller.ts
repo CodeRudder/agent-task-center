@@ -65,4 +65,11 @@ export class CommentController {
     await this.commentService.remove(req.user.id, id);
     return { message: '评论已删除' };
   }
+
+  // 获取评论历史记录
+  @Get(':id/history')
+  @ApiOperation({ summary: '获取评论历史记录' })
+  async getHistory(@Request() req: any, @Param('id') id: string) {
+    return await this.commentService.getHistory(req.user.id, id);
+  }
 }
