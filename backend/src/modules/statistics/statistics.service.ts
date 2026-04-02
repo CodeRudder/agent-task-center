@@ -203,7 +203,10 @@ export class StatisticsService {
   }
 
   private async calculateTagStatistics(tasks: Task[]): Promise<{ tagName: string; count: number }[]> {
+    // ADR-002: 移除关联查询，task.tags字段已注释
+    // TODO: 使用显式JOIN查询或中间表查询
     const tagMap = new Map<string, number>();
+    /*
     tasks.forEach(task => {
       if (task.tags) {
         task.tags.forEach(tag => {
@@ -212,11 +215,15 @@ export class StatisticsService {
         });
       }
     });
+    */
     return Array.from(tagMap.entries()).map(([tagName, count]) => ({ tagName, count }));
   }
 
   private async calculateCategoryStatistics(tasks: Task[]): Promise<{ categoryName: string; count: number }[]> {
+    // ADR-002: 移除关联查询，task.categories字段已注释
+    // TODO: 使用显式JOIN查询或中间表查询
     const categoryMap = new Map<string, number>();
+    /*
     tasks.forEach(task => {
       if (task.categories) {
         task.categories.forEach(category => {
@@ -225,6 +232,7 @@ export class StatisticsService {
         });
       }
     });
+    */
     return Array.from(categoryMap.entries()).map(([categoryName, count]) => ({ categoryName, count }));
   }
 }
