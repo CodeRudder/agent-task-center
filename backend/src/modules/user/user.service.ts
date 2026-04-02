@@ -35,10 +35,17 @@ export class UserService {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
+  async findAll(page: number = 1, limit: number = 10): Promise<{ users: User[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await this.userRepository.findAndCount({
       select: ['id', 'email', 'displayName', 'role', 'createdAt'],
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
+
+    return { users, total };
   }
 
   async updateProfile(
@@ -152,15 +159,6 @@ export class UserService {
     const permissions = await this.permissionRepository.find({
       where: { id: { $in: permissionIds } as any },
     });
-
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      displayName: user.displayName,
-      role: user.role,
-      status: user.isActive ? 'active' : 'disabled',
-      createdAt: user.createdAt,
 
     return {
       id: user.id,
