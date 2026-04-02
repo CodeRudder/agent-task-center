@@ -20,6 +20,7 @@ import { PermissionModule } from './modules/permission/permission.module';
 import { ProjectModule } from './modules/project/project.module';
 import { RoleModule } from './modules/role/role.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -85,6 +86,7 @@ import { appConfig, jwtConfig } from './config/app.config';
     ProjectModule,
     RoleModule,
     ReportsModule,
+    ApiKeysModule,
   ],
   controllers: [AppController],
   providers: [
