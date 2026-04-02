@@ -130,9 +130,15 @@ export class ProjectService {
     await this.projectRepository.save(project);
 
     // ADR-002: 移除关联查询
-    return await this.projectRepository.findOne({
+    const updatedProject = await this.projectRepository.findOne({
       where: { id: projectId },
-    })!;
+    });
+    
+    if (!updatedProject) {
+      throw new NotFoundException('项目不存在');
+    }
+    
+    return updatedProject;
   }
 
   /**
