@@ -111,10 +111,10 @@ export class TaskService {
         depTask.status as depStatus
       FROM task_dependencies td
       LEFT JOIN tasks depTask ON td.depends_on_task_id = depTask.id
-      WHERE td.task_id = $1
+      WHERE td.task_id = :taskId
         AND td.is_blocking = true
       `,
-      [taskId]
+      { taskId }
     );
 
     if (dependencies && dependencies.length > 0) {
