@@ -23,7 +23,7 @@ export class ApiKeysController {
   @ApiOperation({ summary: 'Create API key' })
   @ApiResponse({ status: 201, description: 'API key created successfully' })
   async create(@Body() createApiKeyDto: CreateApiKeyDto, @Req() req: RequestWithUser) {
-    const userId = req.user.userId;
+    const userId = req.user?.userId || (req.user as any)?.sub;
     return this.apiKeysService.create(createApiKeyDto, userId);
   }
 
