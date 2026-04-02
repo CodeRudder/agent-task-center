@@ -7,10 +7,11 @@ import { CommentMention } from './entities/comment-mention.entity';
 import { CommentHistory } from './entities/comment-history.entity';
 import { NotificationModule } from '../notification/notification.module';
 import { User } from '../user/entities/user.entity';
+import { Task } from '../task/entities/task.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Comment, CommentMention, CommentHistory, User]),
+    TypeOrmModule.forFeature([Comment, CommentMention, CommentHistory, User, Task]),
     NotificationModule,
   ],
   controllers: [CommentController],
