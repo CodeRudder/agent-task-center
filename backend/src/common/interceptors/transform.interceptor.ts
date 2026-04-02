@@ -6,24 +6,24 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ApiResponse } from '../interfaces/api-response.interface';
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, ApiResponse<T>>
-{
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<ApiResponse<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        statusCode: context.switchToHttp().getResponse().statusCode,
-        message: 'Success',
-        data,
-        timestamp: new Date().toISOString(),
-      })),
+      map((data) => {
+        // 如果返回的数据已经有success字段，说明已经被处理过了，直接返回
+        if (data && typeof data === 'object' && 'success' in data) {
+          return data;
+        }
+
+        // 包装成统一格式
+        return {
+          success: true,
+          statusCode: context.switchToHttp().getResponse().statusCode || 200,
+          data: data,
+        };
+      }),
     );
   }
 }
