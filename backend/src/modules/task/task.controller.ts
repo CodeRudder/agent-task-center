@@ -280,6 +280,12 @@ export class TaskController {
   }
 
   // 标签相关路由
+  /**
+   * Add a tag to a task
+   * ADR-002: 移除关联装饰器，TaskService中addTag方法已注释
+   * TODO: 使用中间表task_tags手动管理关联关系
+   */
+  /*
   @Post(':id/tags')
   @ApiOperation({ summary: 'Add a tag to a task' })
   async addTag(
@@ -288,7 +294,14 @@ export class TaskController {
   ) {
     return this.taskService.addTag(id, addTagDto.tagId);
   }
+  */
 
+  /**
+   * Remove a tag from a task
+   * ADR-002: 移除关联装饰器，TaskService中removeTag方法已注释
+   * TODO: 使用中间表task_tags手动管理关联关系
+   */
+  /*
   @Delete(':id/tags/:tagId')
   @ApiOperation({ summary: 'Remove a tag from a task' })
   async removeTag(
@@ -297,4 +310,5 @@ export class TaskController {
   ) {
     return this.taskService.removeTag(id, tagId);
   }
+  */
 }
