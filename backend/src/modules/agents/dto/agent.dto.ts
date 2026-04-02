@@ -35,6 +35,10 @@ export class UpdateAgentDto {
   name?: string;
 
   @IsOptional()
+  @IsEnum(AgentType)
+  type?: AgentType;
+
+  @IsOptional()
   @IsString()
   description?: string;
 

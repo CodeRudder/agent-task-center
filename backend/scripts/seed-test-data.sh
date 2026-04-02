@@ -112,6 +112,124 @@ done
 
 echo "✅ 任务创建完成"
 
+# 5. 创建Agent
+echo ""
+echo "5. 创建测试Agent（5个）..."
+
+echo "  创建Agent: 前端开发工程师"
+curl -s -X POST http://localhost:3002/api/agents \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"前端开发工程师","type":"developer","description":"前端开发专家","capabilities":["React","Vue","TypeScript"],"maxConcurrentTasks":5}' > /dev/null
+
+echo "  创建Agent: 后端开发工程师"
+curl -s -X POST http://localhost:3002/api/agents \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"后端开发工程师","type":"developer","description":"后端开发专家","capabilities":["Node.js","Python","PostgreSQL"],"maxConcurrentTasks":5}' > /dev/null
+
+echo "  创建Agent: UI/UX设计师"
+curl -s -X POST http://localhost:3002/api/agents \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"UI/UX设计师","type":"designer","description":"UI/UX设计专家","capabilities":["Figma","Sketch","Adobe XD"],"maxConcurrentTasks":3}' > /dev/null
+
+echo "  创建Agent: 测试工程师"
+curl -s -X POST http://localhost:3002/api/agents \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"测试工程师","type":"qa","description":"测试专家","capabilities":["Jest","Cypress","Selenium"],"maxConcurrentTasks":5}' > /dev/null
+
+echo "  创建Agent: DevOps工程师"
+curl -s -X POST http://localhost:3002/api/agents \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"DevOps工程师","type":"devops","description":"DevOps专家","capabilities":["Docker","Kubernetes","CI/CD"],"maxConcurrentTasks":5}' > /dev/null
+
+echo "✅ Agent创建完成"
+
+# 6. 创建Project
+echo ""
+echo "6. 创建测试Project（3个）..."
+
+echo "  创建Project: 任务管理系统"
+PROJECT_RESPONSE=$(curl -s -X POST http://localhost:3002/api/projects \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"任务管理系统","description":"企业级任务管理平台","status":"active"}')
+
+PROJECT1_ID=$(echo $PROJECT_RESPONSE | jq -r '.data.id' 2>/dev/null)
+
+echo "  创建Project: 移动应用开发"
+PROJECT_RESPONSE=$(curl -s -X POST http://localhost:3002/api/projects \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"移动应用开发","description":"iOS和Android应用开发","status":"active"}')
+
+PROJECT2_ID=$(echo $PROJECT_RESPONSE | jq -r '.data.id' 2>/dev/null)
+
+echo "  创建Project: 数据分析平台"
+PROJECT_RESPONSE=$(curl -s -X POST http://localhost:3002/api/projects \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"数据分析平台","description":"大数据可视化分析平台","status":"active"}')
+
+PROJECT3_ID=$(echo $PROJECT_RESPONSE | jq -r '.data.id' 2>/dev/null)
+
+echo "✅ Project创建完成"
+
+# 7. 创建Webhook
+echo ""
+echo "7. 创建测试Webhook（3个）..."
+
+if [ -n "$PROJECT1_ID" ] && [ "$PROJECT1_ID" != "null" ]; then
+    echo "  创建Webhook: 任务创建通知"
+    curl -s -X POST http://localhost:3002/api/webhooks \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\":\"任务创建通知\",\"url\":\"https://example.com/webhook/task-created\",\"secret\":\"task-secret-123\",\"events\":[\"task.created\"],\"projectId\":\"$PROJECT1_ID\",\"isActive\":true}" > /dev/null
+
+    echo "  创建Webhook: 任务更新通知"
+    curl -s -X POST http://localhost:3002/api/webhooks \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\":\"任务更新通知\",\"url\":\"https://example.com/webhook/task-updated\",\"secret\":\"update-secret-456\",\"events\":[\"task.updated\"],\"projectId\":\"$PROJECT1_ID\",\"isActive\":true}" > /dev/null
+fi
+
+if [ -n "$PROJECT2_ID" ] && [ "$PROJECT2_ID" != "null" ]; then
+    echo "  创建Webhook: 项目完成通知"
+    curl -s -X POST http://localhost:3002/api/webhooks \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\":\"项目完成通知\",\"url\":\"https://example.com/webhook/project-completed\",\"secret\":\"project-secret-789\",\"events\":[\"project.completed\"],\"projectId\":\"$PROJECT2_ID\",\"isActive\":true}" > /dev/null
+fi
+
+echo "✅ Webhook创建完成"
+
+# 8. 创建Role
+echo ""
+echo "8. 创建测试Role（3个）..."
+
+echo "  创建Role: 管理员"
+curl -s -X POST http://localhost:3002/api/roles \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"管理员","description":"系统管理员，拥有所有权限","permissions":{"tasks":["view","create","edit","delete","manage"],"projects":["view","create","edit","delete","manage"],"users":["view","create","edit","delete","manage"],"webhooks":["view","create","edit","delete","manage"],"roles":["view","create","edit","delete","manage"],"reports":["view","create","export"],"api":["view","create","delete","manage"]}}' > /dev/null
+
+echo "  创建Role: 开发者"
+curl -s -X POST http://localhost:3002/api/roles \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"开发者","description":"开发人员，可以管理任务和项目","permissions":{"tasks":["view","create","edit","delete"],"projects":["view","create","edit"],"reports":["view","create","export"]}}' > /dev/null
+
+echo "  创建Role: 访客"
+curl -s -X POST http://localhost:3002/api/roles \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"访客","description":"访客角色，只有查看权限","permissions":{"tasks":["view"],"projects":["view"],"reports":["view"]}}' > /dev/null
+
+echo "✅ Role创建完成"
+
 echo ""
 echo "================================"
 echo "测试数据准备完成！"
@@ -121,5 +239,9 @@ echo "✅ 已创建："
 echo "  - 5个标签（前端、后端、测试、文档、紧急）"
 echo "  - 3个分类（功能开发、Bug修复、性能优化）"
 echo "  - 20个任务（不同状态和优先级）"
+echo "  - 5个Agent（不同类型和能力）"
+echo "  - 3个Project（不同项目）"
+echo "  - 3个Webhook（不同事件）"
+echo "  - 3个Role（管理员、开发者、访客）"
 echo ""
 echo "✅ 测试数据准备完成，QA可以开始验收测试！"

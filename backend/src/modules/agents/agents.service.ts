@@ -19,10 +19,12 @@ export class AgentsService {
   ) {}
 
   async create(createAgentDto: CreateAgentDto, userId: string): Promise<Agent> {
+    // 生成不超过60个字符的apiToken（留4个字符给前缀"at_"）
+    const randomBytes = Buffer.from(Math.random().toString()).toString('base64').substring(0, 56);
     const agent = this.agentRepository.create({
       ...createAgentDto,
       createdBy: userId,
-      apiToken: `at_${Buffer.from(Math.random().toString()).toString('base64')}`,
+      apiToken: `at_${randomBytes}`,
     });
 
     return this.agentRepository.save(agent);
@@ -211,6 +213,35 @@ export class AgentsService {
     Object.assign(agent, updateAgentDto);
 
     return this.agentRepository.save(agent);
+  }
+
+  async updateStatus(id: string, status: string): Promise<Agent> {
+    const agent = await this.agentRepository.findOne({ where: { id } });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    // 验证status值
+    const validStatuses = Object.values(AgentStatus);
+    if (!validStatuses.includes(status as AgentStatus)) {
+      throw new Error(`Invalid status value. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    agent.status = status as AgentStatus;
+
+    return this.agentRepository.save(agent);
+  }
+
+  async remove(id: string): Promise<void> {
+    const agent = await this.agentRepository.findOne({ where: { id } });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    // 使用软删除
+    await this.agentRepository.softRemove(agent);
   }
 
   private async calculateAgentLoad(agentId: string): Promise<AgentLoadDto> {

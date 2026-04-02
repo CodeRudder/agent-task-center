@@ -89,8 +89,20 @@ export class WebhookService {
     return this.webhookRepository.save(webhook);
   }
 
-  async remove(id: string): Promise<void> {
-    const webhook = await this.findOne(id);
+  async remove(id: string, userId: string): Promise<void> {
+    const webhook = await this.webhookRepository.findOne({
+      where: { id },
+    });
+
+    if (!webhook) {
+      throw new NotFoundException('Webhook not found');
+    }
+
+    // 权限检查：只有创建者可以删除webhook
+    if (webhook.createdBy !== userId) {
+      throw new Error('You do not have permission to delete this webhook');
+    }
+
     await this.webhookRepository.remove(webhook);
   }
 

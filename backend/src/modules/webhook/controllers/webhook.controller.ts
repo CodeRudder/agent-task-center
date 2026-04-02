@@ -64,8 +64,8 @@ export class WebhookController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete webhook configuration' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    await this.webhookService.remove(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
+    await this.webhookService.remove(id, req.user.id);
     return { success: true };
   }
 
