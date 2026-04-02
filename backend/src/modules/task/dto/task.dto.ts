@@ -49,6 +49,11 @@ export class CreateTaskDto {
   @IsUUID()
   parentId?: string;
 
+  @ApiPropertyOptional({ example: 'uuid-project-id', description: '关联的项目ID' })
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
   @ApiPropertyOptional({ minimum: 0, maximum: 100, default: 0 })
   @IsOptional()
   @IsInt()

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend-prod:
-    image: localhost:5000/agent-task-system:v5.5
+    image: localhost:5000/agent-task-system:v5.9
     container_name: agent-task-backend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
@@ -36,7 +36,7 @@ services:
       retries: 3
 
   frontend-prod:
-    image: localhost:5000/agent-task-frontend:v5.1-p2-merged
+    image: localhost:5000/agent-task-frontend:v5.9
     container_name: agent-task-frontend-prod
     restart: unless-stopped
     # 不对外暴露端口，只在内网访问
@@ -101,8 +101,6 @@ services:
     image: redis:7-alpine
     container_name: agent-task-redis-prod
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_prod_data:/data
     networks:
