@@ -288,9 +288,49 @@ CREATE INDEX idx_comments_created_at ON comments(created_at);
 -- ============================================================================
 
 -- Insert default admin user (password: admin123 - should be changed in production)
--- Note: This is a placeholder, password should be hashed in real deployment
+-- Note: Password hash generated using bcrypt.hashSync('admin123', 10)
 INSERT INTO users (email, password, name, role, is_active) VALUES
-('admin@example.com', '$2b$10$placeholder_hash_change_me', 'Admin User', 'admin', true);
+('admin@example.com', '$2b$10$DubeYV3nQ/PHXGJ8YJ.KVeKMXYnjmd.RAqR4eYKobawE7qvZlSBmi', 'Admin User', 'admin', true);
+
+-- Webhook Configurations Table
+CREATE TABLE webhook_configurations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  url VARCHAR(500) NOT NULL,
+  secret VARCHAR(255),
+  events TEXT[] NOT NULL,
+  headers JSONB DEFAULT '{}',
+  template JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT true,
+  retry_count INTEGER DEFAULT 3,
+  timeout INTEGER DEFAULT 5000,
+  project_id UUID REFERENCES users(id),
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Webhook Logs Table
+CREATE TABLE webhook_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  webhook_id UUID NOT NULL REFERENCES webhook_configurations(id) ON DELETE CASCADE,
+  event_type VARCHAR(50) NOT NULL,
+  payload JSONB DEFAULT '{}',
+  response_status INTEGER,
+  response_body TEXT,
+  response_headers JSONB DEFAULT '{}',
+  success BOOLEAN DEFAULT false,
+  error_message TEXT,
+  retry_count INTEGER DEFAULT 0,
+  sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Webhook Indexes
+CREATE INDEX idx_webhook_configurations_project_id ON webhook_configurations(project_id);
+CREATE INDEX idx_webhook_configurations_is_active ON webhook_configurations(is_active);
+CREATE INDEX idx_webhook_logs_webhook_id ON webhook_logs(webhook_id);
+CREATE INDEX idx_webhook_logs_sent_at ON webhook_logs(sent_at);
 
 -- ============================================================================
 -- Complete

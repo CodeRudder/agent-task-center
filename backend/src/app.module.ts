@@ -21,6 +21,7 @@ import { ProjectModule } from './modules/project/project.module';
 import { RoleModule } from './modules/role/role.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -87,6 +88,7 @@ import { appConfig, jwtConfig } from './config/app.config';
     RoleModule,
     ReportsModule,
     ApiKeysModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [
