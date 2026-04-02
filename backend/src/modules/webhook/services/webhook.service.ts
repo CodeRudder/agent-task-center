@@ -40,10 +40,7 @@ export class WebhookService {
   }): Promise<{ items: WebhookConfiguration[]; total: number }> {
     const { projectId, isActive, page = 1, pageSize = 20 } = options;
 
-    const queryBuilder = this.webhookRepository
-      .createQueryBuilder('webhook')
-      .leftJoinAndSelect('webhook.project', 'project')
-      .leftJoinAndSelect('webhook.creator', 'creator');
+    const queryBuilder = this.webhookRepository.createQueryBuilder('webhook');
 
     if (projectId) {
       queryBuilder.andWhere('webhook.projectId = :projectId', { projectId });
@@ -54,7 +51,7 @@ export class WebhookService {
     }
 
     const [items, total] = await queryBuilder
-      .orderBy('webhook.created_at', 'DESC')
+      .orderBy('webhook.createdAt', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
