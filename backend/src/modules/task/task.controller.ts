@@ -220,7 +220,8 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updatePriorityDto: { priority: string },
   ): Promise<Task> {
-    return this.taskService.updatePriority(id, updatePriorityDto.priority as TaskPriority);
+    const priority = updatePriorityDto.priority as unknown as TaskPriority;
+    return this.taskService.updatePriority(id, priority);
   }
 
   @Patch(":id/duedate")
