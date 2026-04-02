@@ -104,16 +104,24 @@ export class TaskService {
 
     // Calculate is_blocked_by_dependency
     let isBlockedByDependency = false;
-    if (task.dependencies && task.dependencies.length > 0) {
-      // Check if any blocking dependency is incomplete
-      for (const dep of task.dependencies) {
+    // ADR-002: 使用显式查询task-dependency中间表
+    const dependencies = await this.dataSource.query(
+      `
+      SELECT td.*,
+        depTask.status as depStatus
+      FROM task_dependencies td
+      LEFT JOIN tasks depTask ON td.depends_on_task_id = depTask.id
+      WHERE td.task_id = $1
+        AND td.is_blocking = true
+      `,
+      [taskId]
+    );
+
+    if (dependencies && dependencies.length > 0) {
+      for (const dep of dependencies) {
         if (dep.isBlocking) {
-          // Query the dependency task to check its status
-          const depTask = await this.taskRepository.findOne({
-            where: { id: dep.dependsOnTaskId },
-            select: ['status'],
-          });
-          if (depTask && depTask.status !== TaskStatus.DONE) {
+          const depStatus = dep.depStatus;
+          if (depStatus && depStatus !== TaskStatus.DONE) {
             isBlockedByDependency = true;
             break;
           }

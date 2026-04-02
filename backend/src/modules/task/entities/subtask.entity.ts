@@ -17,9 +17,8 @@ export class Subtask {
   @Column({ name: 'task_id' })
   taskId: string;
 
-  @ManyToOne(() => Task, (task) => task.subtasks)
-  @JoinColumn({ name: 'task_id' })
-  task: Task;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // task: Task;
 
   @Column()
   title: string;

@@ -23,16 +23,14 @@ export class TaskDependency {
   @Column({ name: 'task_id' })
   taskId: string;
 
-  @ManyToOne(() => Task, (task) => task.dependencies)
-  @JoinColumn({ name: 'task_id' })
-  task: Task;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // task: Task;
 
   @Column({ name: 'depends_on_task_id' })
   dependsOnTaskId: string;
 
-  @ManyToOne(() => Task)
-  @JoinColumn({ name: 'depends_on_task_id' })
-  dependsOnTask: Task;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // dependsOnTask: Task;
 
   @Column({
     type: 'enum',
