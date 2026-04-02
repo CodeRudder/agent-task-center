@@ -109,7 +109,7 @@ export class TaskController {
   @Get(":id")
   @ApiOperation({ summary: "Get task by ID" })
   async findOne(
-    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Param("id") id: string,
   ): Promise<Task> {
     return this.taskService.findOne(id);
   }
@@ -117,7 +117,7 @@ export class TaskController {
   @Put(":id")
   @ApiOperation({ summary: "Update task (PUT)" })
   async updatePut(
-    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Param("id") id: string,
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
@@ -127,7 +127,7 @@ export class TaskController {
   @Patch(":id")
   @ApiOperation({ summary: "Update task" })
   async update(
-    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Param("id") id: string,
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
@@ -152,10 +152,9 @@ export class TaskController {
   ): Promise<Task> {
     return this.taskService.updateStatus(
       id,
-      dto.status,
+      dto,
       req.user.id,
       req.user.type || "user",
-      dto.reason,
     );
   }
 
@@ -278,5 +277,24 @@ export class TaskController {
   ) {
     await this.commentService.remove(commentId, req.user.id);
     return { success: true };
+  }
+
+  // 标签相关路由
+  @Post(':id/tags')
+  @ApiOperation({ summary: 'Add a tag to a task' })
+  async addTag(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() addTagDto: { tagId: string },
+  ) {
+    return this.taskService.addTag(id, addTagDto.tagId);
+  }
+
+  @Delete(':id/tags/:tagId')
+  @ApiOperation({ summary: 'Remove a tag from a task' })
+  async removeTag(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('tagId', new ParseUUIDPipe({ version: '4' })) tagId: string,
+  ) {
+    return this.taskService.removeTag(id, tagId);
   }
 }

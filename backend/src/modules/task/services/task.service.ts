@@ -13,6 +13,7 @@ import {
   UpdateTaskDto,
   UpdateProgressDto,
 } from "../dto/task.dto";
+import { Tag } from "../../tag/entities/tag.entity";
 
 @Injectable()
 export class TaskService {
@@ -21,6 +22,8 @@ export class TaskService {
     private taskRepository: Repository<Task>,
     @InjectRepository(TaskStatusHistory)
     private statusHistoryRepository: Repository<TaskStatusHistory>,
+    @InjectRepository(Tag)
+    private tagRepository: Repository<Tag>,
     private statusMachine: TaskStatusMachineService,
     private dataSource: DataSource,
   ) {}
@@ -186,11 +189,13 @@ export class TaskService {
    */
   async updateStatus(
     taskId: string,
-    newStatus: TaskStatus,
+    updateTaskStatusDto: any,
     userId: string,
     userType: "user" | "agent" = "user",
-    reason?: string,
   ): Promise<Task> {
+    const { status, reason } = updateTaskStatusDto;
+    const newStatus = status as TaskStatus;
+
     // 使用事务确保数据一致性
     return this.dataSource.transaction(async (manager) => {
       // 1. 查询任务
@@ -383,5 +388,53 @@ export class TaskService {
   async remove(id: string): Promise<void> {
     const task = await this.findOne(id);
     await this.taskRepository.softDelete(id);
+  }
+
+  /**
+   * 为任务添加标签
+   */
+  async addTag(taskId: string, tagId: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('任务不存在');
+    }
+
+    const tag = await this.tagRepository.findOne({ where: { id: tagId } });
+    if (!tag) {
+      throw new NotFoundException('标签不存在');
+    }
+
+    // 使用query builder手动添加关联，避免自动关联加载
+    await this.taskRepository
+      .createQueryBuilder()
+      .relation(Task, 'tags')
+      .of(taskId)
+      .add(tagId);
+
+    return this.findOne(taskId);
+  }
+
+  /**
+   * 从任务中移除标签
+   */
+  async removeTag(taskId: string, tagId: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('任务不存在');
+    }
+
+    const tag = await this.tagRepository.findOne({ where: { id: tagId } });
+    if (!tag) {
+      throw new NotFoundException('标签不存在');
+    }
+
+    // 使用query builder手动移除关联，避免自动关联加载
+    await this.taskRepository
+      .createQueryBuilder()
+      .relation(Task, 'tags')
+      .of(taskId)
+      .remove(tagId);
+
+    return this.findOne(taskId);
   }
 }

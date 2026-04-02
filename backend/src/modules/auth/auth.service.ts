@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,6 +15,8 @@ interface LoginAttempt {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   // 内存缓存：记录登录失败次数
   private loginAttempts: Map<string, LoginAttempt> = new Map();
   private readonly MAX_LOGIN_ATTEMPTS = 5; // 最大失败次数
@@ -29,99 +31,116 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, name } = registerDto;
+    try {
+      const { email, password, name } = registerDto;
 
-    // Check if user exists
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
-    });
+      // Check if user exists
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
 
-    if (existingUser) {
-      throw new UnauthorizedException('Email already registered');
+      if (existingUser) {
+        throw new BadRequestException('该邮箱已被注册');
+      }
+
+      // Generate username from email
+      const username = await this.generateUsername(email);
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user = this.userRepository.create({
+        email,
+        password: hashedPassword,
+        displayName: name,
+        username, // 添加自动生成的username
+      });
+
+      const savedUser = await this.userRepository.save(user);
+
+      // Generate tokens
+      const accessToken = this.generateToken(savedUser);
+      const refreshToken = this.generateRefreshToken(savedUser);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: savedUser.id,
+          email: savedUser.email,
+          name: savedUser.displayName,
+          role: savedUser.role,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Register failed: ${error.message}`, error.stack);
+
+      // 如果是已知的错误，直接抛出
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // 否则抛出通用的错误
+      throw new BadRequestException('注册失败，请稍后重试');
     }
-
-    // Generate username from email
-    const username = await this.generateUsername(email);
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = this.userRepository.create({
-      email,
-      password: hashedPassword,
-      displayName: name,
-      username, // 添加自动生成的username
-    });
-
-    await this.userRepository.save(user);
-
-    // Generate tokens
-    const accessToken = this.generateToken(user);
-    const refreshToken = this.generateRefreshToken(user);
-
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.displayName,
-        role: user.role,
-      },
-    };
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const { email, password } = loginDto;
+    try {
+      const { email, password } = loginDto;
 
-    // 检查是否被锁定
-    const attempt = this.loginAttempts.get(email);
-    if (attempt && attempt.lockUntil && Date.now() < attempt.lockUntil) {
-      const remainingTime = Math.ceil((attempt.lockUntil - Date.now()) / 60000);
-      throw new UnauthorizedException(
-        `账户已被锁定，请${remainingTime}分钟后再试`
-      );
+      // 检查是否被锁定
+      const attempt = this.loginAttempts.get(email);
+      if (attempt && attempt.lockUntil && Date.now() < attempt.lockUntil) {
+        const remainingTime = Math.ceil((attempt.lockUntil - Date.now()) / 60000);
+        throw new UnauthorizedException(
+          `账户已被锁定，请${remainingTime}分钟后再试`
+        );
+      }
+
+      // Find user
+      const user = await this.userRepository.findOne({ where: { email } });
+
+      if (!user) {
+        this.recordFailedAttempt(email);
+        throw new UnauthorizedException('用户名或密码错误，请重试');
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        this.recordFailedAttempt(email);
+        throw new UnauthorizedException('用户名或密码错误，请重试');
+      }
+
+      // Check if user is active
+      if (!user.isActive) {
+        throw new UnauthorizedException('账号已被禁用，请联系管理员');
+      }
+
+      // 登录成功，清除失败记录
+      this.loginAttempts.delete(email);
+
+      // Generate tokens
+      const accessToken = this.generateToken(user);
+      const refreshToken = this.generateRefreshToken(user);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.displayName,
+          role: user.role,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Login failed: ${error.message}`, error.stack);
+      throw error;
     }
-
-    // Find user
-    const user = await this.userRepository.findOne({ where: { email } });
-
-    if (!user) {
-      this.recordFailedAttempt(email);
-      throw new UnauthorizedException('用户名或密码错误，请重试');
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      this.recordFailedAttempt(email);
-      throw new UnauthorizedException('用户名或密码错误，请重试');
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
-      throw new UnauthorizedException('账号已被禁用，请联系管理员');
-    }
-
-    // 登录成功，清除失败记录
-    this.loginAttempts.delete(email);
-
-    // Generate tokens
-    const accessToken = this.generateToken(user);
-    const refreshToken = this.generateRefreshToken(user);
-
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.displayName,
-        role: user.role,
-      },
-    };
   }
 
   /**
@@ -234,22 +253,29 @@ export class AuthService {
     try {
       // 验证refresh token
       const payload = this.jwtService.verify(refreshToken);
-      
+
       if (payload.type !== 'refresh') {
+        this.logger.warn(`Refresh token failed: invalid token type`);
         throw new UnauthorizedException('无效的刷新令牌');
       }
-      
+
       // 查找用户
       const user = await this.userRepository.findOne({ where: { id: payload.sub } });
-      
-      if (!user || !user.isActive) {
-        throw new UnauthorizedException('用户不存在或已被禁用');
+
+      if (!user) {
+        this.logger.warn(`Refresh token failed: user not found`);
+        throw new UnauthorizedException('用户不存在');
       }
-      
+
+      if (!user.isActive) {
+        this.logger.warn(`Refresh token failed: user is disabled`);
+        throw new UnauthorizedException('用户已被禁用');
+      }
+
       // 生成新的access token和refresh token
       const newAccessToken = this.generateToken(user);
       const newRefreshToken = this.generateRefreshToken(user);
-      
+
       return {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -261,6 +287,19 @@ export class AuthService {
         },
       };
     } catch (error) {
+      this.logger.error(`Refresh token failed: ${error.message}`, error.stack);
+
+      // 如果是JWT验证错误，抛出UnauthorizedException
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('刷新令牌无效或已过期');
+      }
+
+      // 如果是已知的错误，直接抛出
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      // 否则抛出通用的错误
       throw new UnauthorizedException('刷新令牌无效或已过期');
     }
   }
@@ -350,50 +389,66 @@ export class AuthService {
    * 重置密码 - 使用 token 重置用户密码
    */
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    // 1. 查找 token
-    const passwordResetToken = await this.passwordResetTokenRepository.findOne({
-      where: { token },
-    });
+    try {
+      // 1. 查找 token
+      const passwordResetToken = await this.passwordResetTokenRepository.findOne({
+        where: { token },
+      });
 
-    if (!passwordResetToken) {
-      throw new UnauthorizedException('无效的重置链接');
+      if (!passwordResetToken) {
+        this.logger.warn(`Reset password failed: token not found`);
+        throw new BadRequestException('无效的重置链接');
+      }
+
+      // 2. 检查 token 是否已使用
+      if (passwordResetToken.isUsed) {
+        this.logger.warn(`Reset password failed: token already used`);
+        throw new BadRequestException('该重置链接已被使用');
+      }
+
+      // 3. 检查 token 是否过期
+      const now = new Date();
+      if (passwordResetToken.expiresAt < now) {
+        this.logger.warn(`Reset password failed: token expired`);
+        throw new BadRequestException('重置链接已过期，请重新申请');
+      }
+
+      // 4. 查找用户
+      const user = await this.userRepository.findOne({
+        where: { email: passwordResetToken.email },
+      });
+
+      if (!user) {
+        this.logger.warn(`Reset password failed: user not found`);
+        throw new BadRequestException('用户不存在');
+      }
+
+      // 5. 加密新密码
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // 6. 更新用户密码
+      user.password = hashedPassword;
+      await this.userRepository.save(user);
+
+      // 7. 标记 token 为已使用
+      passwordResetToken.isUsed = true;
+      await this.passwordResetTokenRepository.save(passwordResetToken);
+
+      this.logger.log(`Password reset successful for user: ${user.email}`);
+
+      return {
+        message: '密码重置成功，请使用新密码登录',
+      };
+    } catch (error) {
+      this.logger.error(`Reset password failed: ${error.message}`, error.stack);
+
+      // 如果是已知的错误，直接抛出
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // 否则抛出通用的错误
+      throw new BadRequestException('密码重置失败，请稍后重试');
     }
-
-    // 2. 检查 token 是否已使用
-    if (passwordResetToken.isUsed) {
-      throw new UnauthorizedException('该重置链接已被使用');
-    }
-
-    // 3. 检查 token 是否过期
-    const now = new Date();
-    if (passwordResetToken.expiresAt < now) {
-      throw new UnauthorizedException('重置链接已过期，请重新申请');
-    }
-
-    // 4. 查找用户
-    const user = await this.userRepository.findOne({
-      where: { email: passwordResetToken.email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('用户不存在');
-    }
-
-    // 5. 加密新密码
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // 6. 更新用户密码
-    user.password = hashedPassword;
-    await this.userRepository.save(user);
-
-    // 7. 标记 token 为已使用
-    passwordResetToken.isUsed = true;
-    await this.passwordResetTokenRepository.save(passwordResetToken);
-
-    console.log(`[resetPassword] Password reset successful for user: ${user.email}`);
-
-    return {
-      message: '密码重置成功，请使用新密码登录',
-    };
   }
 }
