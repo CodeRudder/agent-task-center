@@ -68,7 +68,7 @@ export class Task {
   dueDate: Date | null;
 
   @Column({ name: 'assignee_id', nullable: true })
-  assigneeId: string | null;
+  assigneeId: string;
 
   // ADR-002: 移除关联装饰器，使用显式JOIN查询
   // assignee: User;
