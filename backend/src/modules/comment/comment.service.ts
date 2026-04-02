@@ -7,6 +7,7 @@ import { CommentHistory } from './entities/comment-history.entity';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { NotificationService } from '../notification/notification.service';
 import { User } from '../user/entities/user.entity';
+import { Task } from '../task/entities/task.entity';
 
 @Injectable()
 export class CommentService {
@@ -19,6 +20,8 @@ export class CommentService {
     private historyRepository: Repository<CommentHistory>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
     private dataSource: DataSource,
     private notificationService: NotificationService,
   ) {}
@@ -79,7 +82,9 @@ export class CommentService {
 
       if (fullComment) {
         // 3.1 发送评论添加通知（通知任务创建者）
-        if (fullComment.task && fullComment.task.creatorId !== userId) {
+        // ADR-002: 使用显式查询获取任务创建者
+        const task = await this.taskRepository.findOne({ where: { id: fullComment.taskId } });
+        if (task && task.creatorId !== userId) {
           await this.notificationService.createCommentAddedNotification(fullComment);
         }
 
@@ -97,11 +102,15 @@ export class CommentService {
         }
 
         // 3.3 发送评论回复通知（通知父评论作者）
-        if (fullComment.parentId && fullComment.parent) {
-          await this.notificationService.createCommentReplyNotification(
-            fullComment,
-            fullComment.parent,
-          );
+        if (fullComment.parentId) {
+          // ADR-002: 使用显式查询获取父评论
+          const parentComment = await this.commentRepository.findOne({ where: { id: fullComment.parentId } });
+          if (parentComment) {
+            await this.notificationService.createCommentReplyNotification(
+              fullComment,
+              parentComment,
+            );
+          }
         }
       }
     } catch (error) {

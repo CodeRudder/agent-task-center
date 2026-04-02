@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Project, ProjectMember, ProjectMemberRole } from './entities/project.entity';
 import { CreateProjectDto, UpdateProjectDto, AddMemberDto } from './dto';
 import { User } from '../user/entities/user.entity';
@@ -75,7 +75,7 @@ export class ProjectService {
     const projectIds = members.map(member => member.projectId);
 
     // 构建查询条件
-    const whereCondition: any = { id: { $in: projectIds } as any };
+    const whereCondition: Record<string, any> = { id: In(projectIds) };
 
     // 如果提供了status参数，添加过滤条件
     if (status) {

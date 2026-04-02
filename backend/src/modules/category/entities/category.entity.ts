@@ -25,8 +25,8 @@ export class Category {
   @Column({ default: 0 })
   usage_count: number;
 
-  @ManyToMany(() => Task, (task) => task.categories)
-  tasks: Task[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // tasks: Task[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

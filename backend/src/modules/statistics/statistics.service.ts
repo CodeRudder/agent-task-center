@@ -67,13 +67,13 @@ export class StatisticsService {
     const userWorkloadMap = new Map<string, UserWorkloadDto>();
 
     tasks.forEach(task => {
-      if (!task.assignee) return;
+      if (!task.assigneeId) return;
 
-      const userId = task.assignee.id;
+      const userId = task.assigneeId;
       if (!userWorkloadMap.has(userId)) {
         userWorkloadMap.set(userId, {
           userId,
-          userName: task.assignee.username,
+          userName: `User-${userId}`, // ADR-002: 使用assigneeId，避免关联查询
           assignedTasks: 0,
           completedTasks: 0,
           inProgressTasks: 0,

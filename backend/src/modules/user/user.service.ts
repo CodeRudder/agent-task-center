@@ -167,7 +167,7 @@ export class UserService {
     // ADR-002: 手动查询permission数据
     const permissionIds = rolePermissions.map(rp => rp.permissionId);
     const permissions = await this.permissionRepository.find({
-      where: { id: { $in: permissionIds } as any },
+      where: { id: In(permissionIds) },
     });
 
     // Convert Permission[] to PermissionDto[]

@@ -21,9 +21,8 @@ export class CommentHistory {
   @Column({ name: 'comment_id' })
   commentId: string;
 
-  @ManyToOne(() => Comment, (comment) => comment.histories, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'comment_id' })
-  comment: Comment;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // comment: Comment;
 
   @Column({ type: 'text' })
   content: string;
