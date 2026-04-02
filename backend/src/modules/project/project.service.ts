@@ -45,12 +45,12 @@ export class ProjectService {
       await queryRunner.manager.save(member);
 
       await queryRunner.commitTransaction();
-      
-      // 返回完整的项目信息（包括owner信息）
-      return (await this.projectRepository.findOne({
+
+      // 返回项目信息（ADR-002: 移除关联查询）
+      const savedProject = await this.projectRepository.findOne({
         where: { id: project.id },
-        relations: ['owner'],
-      }))!;
+      });
+      return savedProject!;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -63,22 +63,28 @@ export class ProjectService {
    * 获取用户的项目列表
    */
   async findAll(userId: string): Promise<Project[]> {
-    // 获取用户是成员的所有项目
+    // 获取用户是成员的所有项目ID（ADR-002: 移除关联查询）
     const members = await this.memberRepository.find({
       where: { userId },
-      relations: ['project', 'project.owner'],
     });
 
-    return members.map(member => member.project);
+    const projectIds = members.map(member => member.projectId);
+
+    // 手动查询项目
+    const projects = await this.projectRepository.find({
+      where: { id: { $in: projectIds } as any },
+    });
+
+    return projects;
   }
 
   /**
    * 获取项目详情
    */
   async findOne(userId: string, projectId: string): Promise<Project> {
+    // ADR-002: 移除关联查询
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
-      relations: ['owner', 'members', 'members.user'],
     });
 
     if (!project) {
@@ -123,10 +129,10 @@ export class ProjectService {
     Object.assign(project, updateProjectDto);
     await this.projectRepository.save(project);
 
-    return (await this.projectRepository.findOne({
+    // ADR-002: 移除关联查询
+    return await this.projectRepository.findOne({
       where: { id: projectId },
-      relations: ['owner'],
-    }))!;
+    })!;
   }
 
   /**
@@ -247,10 +253,9 @@ export class ProjectService {
       throw new ForbiddenException('无权访问该项目');
     }
 
-    // 获取项目的任务列表
+    // 获取项目的任务列表（ADR-002: 移除关联查询）
     return await this.taskRepository.find({
       where: { projectId },
-      relations: ['assignee', 'creator'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -265,10 +270,9 @@ export class ProjectService {
       throw new ForbiddenException('无权访问该项目');
     }
 
-    // 获取项目成员列表
+    // 获取项目成员列表（ADR-002: 移除关联查询）
     return await this.memberRepository.find({
       where: { projectId },
-      relations: ['user'],
       order: { joinedAt: 'DESC' },
     });
   }
