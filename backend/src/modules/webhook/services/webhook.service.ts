@@ -23,13 +23,22 @@ export class WebhookService {
   ) {}
 
   async create(createWebhookDto: CreateWebhookDto, userId: string): Promise<WebhookConfiguration> {
+    // Auto-generate secret if not provided
+    const secret = createWebhookDto.secret || this.generateSecret();
+
     const webhook = this.webhookRepository.create({
       ...createWebhookDto,
+      secret,
       createdBy: userId,
       projectId: createWebhookDto.projectId,
     });
 
     return this.webhookRepository.save(webhook);
+  }
+
+  private generateSecret(): string {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
   }
 
   async findAll(options: {

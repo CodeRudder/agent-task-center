@@ -10,9 +10,10 @@ export class CreateWebhookDto {
   @IsString()
   url: string;
 
-  @ApiProperty({ example: 'my-secret-key' })
+  @ApiProperty({ example: 'my-secret-key', required: false })
+  @IsOptional()
   @IsString()
-  secret: string;
+  secret?: string;
 
   @ApiProperty({ example: ['task.created', 'task.updated', 'task.completed'] })
   @IsArray()
