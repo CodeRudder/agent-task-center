@@ -22,8 +22,9 @@ export class TaskService {
     private taskRepository: Repository<Task>,
     @InjectRepository(TaskStatusHistory)
     private statusHistoryRepository: Repository<TaskStatusHistory>,
-    @InjectRepository(Tag)
-    private tagRepository: Repository<Tag>,
+    // ADR-002: 移除TagRepository注入，Task实体中tags字段已注释
+    // @InjectRepository(Tag)
+    // private tagRepository: Repository<Tag>,
     private statusMachine: TaskStatusMachineService,
     private dataSource: DataSource,
   ) {}
@@ -400,7 +401,10 @@ export class TaskService {
 
   /**
    * 为任务添加标签
+   * ADR-002: 移除关联装饰器，Task实体中tags字段已注释
+   * TODO: 使用中间表task_tags手动管理关联关系
    */
+  /*
   async addTag(taskId: string, tagId: string): Promise<Task> {
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
     if (!task) {
@@ -421,10 +425,14 @@ export class TaskService {
 
     return this.findOne(taskId);
   }
+  */
 
   /**
    * 从任务中移除标签
+   * ADR-002: 移除关联装饰器，Task实体中tags字段已注释
+   * TODO: 使用中间表task_tags手动管理关联关系
    */
+  /*
   async removeTag(taskId: string, tagId: string): Promise<Task> {
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
     if (!task) {
@@ -445,4 +453,5 @@ export class TaskService {
 
     return this.findOne(taskId);
   }
+  */
 }
