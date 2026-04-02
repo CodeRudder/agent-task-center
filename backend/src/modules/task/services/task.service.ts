@@ -114,7 +114,7 @@ export class TaskService {
       WHERE td.task_id = :taskId
         AND td.is_blocking = true
       `,
-      { taskId: taskId as string }
+      { taskId: id as string }
     );
 
     if (dependencies && dependencies.length > 0) {
