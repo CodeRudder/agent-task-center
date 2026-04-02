@@ -29,7 +29,7 @@ import {
   GetStatusHistoriesQuery,
   StatusHistoriesResponse,
 } from "./dto/update-task-status.dto";
-import { Task, TaskStatus } from "./entities/task.entity";
+import { Task, TaskStatus, TaskPriority } from "./entities/task.entity";
 import { Public } from "../../common/decorators/public.decorator";
 
 @ApiTags("tasks")
@@ -220,7 +220,7 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updatePriorityDto: { priority: string },
   ): Promise<Task> {
-    return this.taskService.updatePriority(id, updatePriorityDto.priority);
+    return this.taskService.updatePriority(id, updatePriorityDto.priority as TaskPriority);
   }
 
   @Patch(":id/duedate")
