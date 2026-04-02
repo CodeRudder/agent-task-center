@@ -72,10 +72,9 @@ export class CommentService {
 
     // 3. 发送通知（在事务外执行，避免影响评论创建）
     try {
-      // 获取完整的评论信息（包括关联数据）
+      // ADR-002: 移除关联查询
       const fullComment = await this.commentRepository.findOne({
         where: { id: comment.id },
-        relations: ['task', 'task.creator', 'parent', 'parent.author'],
       });
 
       if (fullComment) {
@@ -119,7 +118,7 @@ export class CommentService {
 
     const [comments, total] = await this.commentRepository.findAndCount({
       where: { taskId, parentId: IsNull() }, // 只查询顶级评论
-      relations: ['author', 'mentions', 'mentions.mentionedUser', 'replies', 'replies.author'],
+      // ADR-002: 移除关联查询
       order: { createdAt: 'DESC' },
       skip,
       take: pageSize,
@@ -135,9 +134,9 @@ export class CommentService {
 
   // 查询单个评论
   async findOne(id: string): Promise<Comment> {
+    // ADR-002: 移除关联查询
     const comment = await this.commentRepository.findOne({
       where: { id },
-      relations: ['author', 'mentions', 'mentions.mentionedUser', 'histories', 'histories.editor'],
     });
 
     if (!comment) {
@@ -227,7 +226,6 @@ export class CommentService {
 
     const histories = await this.historyRepository.find({
       where: { commentId },
-      relations: ['editor'],
       order: { editedAt: 'DESC' },
     });
 
