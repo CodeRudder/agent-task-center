@@ -43,6 +43,31 @@ export class UserController {
     return this.userService.findAllWithPagination(query);
   }
 
+  @Post()
+  @UseGuards(PermissionGuard)
+  @RequirePermission('user', 'create')
+  @ApiOperation({ summary: '创建用户' })
+  @ApiResponse({ status: 201, description: '创建成功' })
+  @ApiResponse({ status: 403, description: '权限不足' })
+  async create(
+    @Body() userData: Partial<User>,
+  ): Promise<User> {
+    return this.userService.create(userData);
+  }
+
+  @Delete(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermission('user', 'delete')
+  @ApiOperation({ summary: '删除用户' })
+  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 403, description: '权限不足' })
+  @ApiResponse({ status: 404, description: '用户不存在' })
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    return this.userService.delete(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取用户详情（包含权限列表）' })
   @ApiResponse({ status: 200, description: '成功', type: UserDetailResponseDto })
@@ -51,6 +76,20 @@ export class UserController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserDetailResponseDto> {
     return this.userService.getUserWithPermissions(id);
+  }
+
+  @Put(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermission('user', 'update')
+  @ApiOperation({ summary: '更新用户信息' })
+  @ApiResponse({ status: 200, description: '成功' })
+  @ApiResponse({ status: 403, description: '权限不足' })
+  @ApiResponse({ status: 404, description: '用户不存在' })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateData: Partial<User>,
+  ): Promise<User> {
+    return this.userService.updateProfile(id, updateData);
   }
 
   @Put(':id/role')

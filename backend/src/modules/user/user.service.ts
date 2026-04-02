@@ -57,6 +57,16 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
+  async create(userData: Partial<User>): Promise<User> {
+    const user = this.userRepository.create(userData);
+    return this.userRepository.save(user);
+  }
+
+  async delete(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.userRepository.remove(user);
+  }
+
   /**
    * 分页查询用户（支持筛选和搜索）
    */
