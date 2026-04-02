@@ -38,7 +38,7 @@ export class RoleController {
   @ApiOperation({ summary: 'Create a new role' })
   @ApiResponse({ status: 201, description: 'Role created successfully' })
   async create(@Body() createRoleDto: CreateRoleDto, @Req() req: RequestWithUser) {
-    const userId = req.user.userId;
+    const userId = (req.user as any).id;
     return this.roleService.create(createRoleDto, userId);
   }
 
