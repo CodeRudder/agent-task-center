@@ -19,6 +19,7 @@ import { VoteModule } from './modules/vote/vote.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { ProjectModule } from './modules/project/project.module';
 import { RoleModule } from './modules/role/role.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -83,6 +84,7 @@ import { appConfig, jwtConfig } from './config/app.config';
     PermissionModule,
     ProjectModule,
     RoleModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
