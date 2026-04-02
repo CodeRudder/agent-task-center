@@ -5,22 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  ManyToOne,
-  OneToMany,
-  ManyToMany,
-  JoinColumn,
-  JoinTable,
   VersionColumn,
   Index,
 } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Comment } from '../../comment/entities/comment.entity';
-import { Subtask } from './subtask.entity';
-import { TaskDependency } from './task-dependency.entity';
-import { TaskStatusHistory } from './task-status-history.entity';
-import { Tag } from '../../tag/entities/tag.entity';
-import { Category } from '../../category/entities/category.entity';
-import { Project } from '../../project/entities/project.entity';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -83,54 +70,48 @@ export class Task {
   @Column({ name: 'assignee_id', nullable: true })
   assigneeId: string | null;
 
-  @ManyToOne(() => User, (user) => user.tasks)
-  @JoinColumn({ name: 'assignee_id' })
-  assignee: User;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // assignee: User;
 
   @Column({ name: 'creator_id' })
   creatorId: string;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'creator_id' })
-  creator: User;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // creator: User;
 
-  @OneToMany(() => Comment, (comment) => comment.task)
-  comments: Comment[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // comments: Comment[];
 
-  @OneToMany(() => Subtask, (subtask) => subtask.task, { cascade: true })
-  subtasks: Subtask[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // subtasks: Subtask[];
 
-  @OneToMany(() => TaskDependency, (dep) => dep.task, { cascade: true })
-  dependencies: TaskDependency[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // dependencies: TaskDependency[];
 
   // ADR-002: 移除关联查询，避免TypeORM生成错误表名
   // @OneToMany(() => TaskStatusHistory, (history) => history.task)
   // statusHistories: TaskStatusHistory[];
 
-  @ManyToMany(() => Tag, (tag) => tag.tasks)
-  @JoinTable()
-  tags: Tag[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // tags: Tag[];
 
-  @ManyToMany(() => Category, (category) => category.tasks)
-  @JoinTable()
-  categories: Category[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // categories: Category[];
 
   @Column({ name: 'parent_id', nullable: true })
   parentId: string | null;
 
-  @ManyToOne(() => Task, (task) => task.subtasks)
-  @JoinColumn({ name: 'parent_id' })
-  parent: Task;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // parent: Task;
 
-  @OneToMany(() => Task, (task) => task.parent)
-  subtasksAsParent: Task[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // subtasksAsParent: Task[];
 
   @Column({ name: 'project_id', nullable: true })
   projectId: string | null;
 
-  @ManyToOne(() => Project, (project) => project.tasks)
-  @JoinColumn({ name: 'project_id' })
-  project: Project;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // project: Project;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any> | null;

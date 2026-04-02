@@ -66,8 +66,8 @@ export class User {
   @Column({ name: 'login_count', default: 0 })
   loginCount: number;
 
-  @OneToMany(() => Task, (task) => task.assignee)
-  tasks: Task[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // tasks: Task[];
 
   notifications: any[]; // For type compatibility
 
