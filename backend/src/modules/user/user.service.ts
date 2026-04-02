@@ -142,19 +142,25 @@ export class UserService {
   async getUserWithPermissions(id: string): Promise<UserDetailResponseDto> {
     const user = await this.findById(id);
 
-    // 获取该用户的角色对应的权限
+    // ADR-002: 移除关联查询
     const rolePermissions = await this.rolePermissionRepository.find({
       where: { role: user.role },
-      relations: ['permission'],
     });
 
-    const permissions = rolePermissions.map((rp) => ({
-      id: rp.permission.id,
-      name: rp.permission.name,
-      resource: rp.permission.resourceType,
-      action: rp.permission.action,
-      description: rp.permission.description,
-    }));
+    // ADR-002: 手动查询permission数据
+    const permissionIds = rolePermissions.map(rp => rp.permissionId);
+    const permissions = await this.permissionRepository.find({
+      where: { id: { $in: permissionIds } as any },
+    });
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+      status: user.isActive ? 'active' : 'disabled',
+      createdAt: user.createdAt,
 
     return {
       id: user.id,
