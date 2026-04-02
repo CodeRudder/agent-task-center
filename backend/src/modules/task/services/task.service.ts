@@ -91,7 +91,8 @@ export class TaskService {
   async findOne(id: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ["assignee", "statusHistories", "dependencies"],
+      // ADR-002: 移除statusHistories关联查询
+      relations: ["assignee", "dependencies"],
     });
 
     if (!task) {
@@ -195,7 +196,8 @@ export class TaskService {
       // 1. 查询任务
       const task = await manager.findOne(Task, {
         where: { id: taskId },
-        relations: ["statusHistories"],
+        // ADR-002: 移除statusHistories关联查询
+        // relations: ["statusHistories"],
       });
 
       if (!task) {

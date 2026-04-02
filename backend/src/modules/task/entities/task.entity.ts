@@ -103,8 +103,9 @@ export class Task {
   @OneToMany(() => TaskDependency, (dep) => dep.task, { cascade: true })
   dependencies: TaskDependency[];
 
-  @OneToMany(() => TaskStatusHistory, (history) => history.task)
-  statusHistories: TaskStatusHistory[];
+  // ADR-002: 移除关联查询，避免TypeORM生成错误表名
+  // @OneToMany(() => TaskStatusHistory, (history) => history.task)
+  // statusHistories: TaskStatusHistory[];
 
   @ManyToMany(() => Tag, (tag) => tag.tasks)
   @JoinTable()

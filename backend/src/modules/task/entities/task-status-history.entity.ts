@@ -66,7 +66,8 @@ export class TaskStatusHistory {
   createdAt: Date;
 
   // Relations
-  @ManyToOne(() => Task, (task) => task.statusHistories)
+  // ADR-002: 移除反向关联引用，避免TypeORM生成错误表名
+  @ManyToOne(() => Task)
   @JoinColumn({ name: 'task_id' })
   task: Task;
 }
