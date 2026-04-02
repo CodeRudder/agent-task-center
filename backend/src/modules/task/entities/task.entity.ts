@@ -65,7 +65,7 @@ export class Task {
   progress: number;
 
   @Column({ name: 'due_date', type: 'timestamp', nullable: true })
-  dueDate: Date | null;
+  dueDate: Date;
 
   @Column({ name: 'assignee_id', nullable: true })
   assigneeId: string;
@@ -99,7 +99,7 @@ export class Task {
   // categories: Category[];
 
   @Column({ name: 'parent_id', nullable: true })
-  parentId: string | null;
+  parentId: string;
 
   // ADR-002: 移除关联装饰器，使用显式JOIN查询
   // parent: Task;
@@ -108,25 +108,25 @@ export class Task {
   // subtasksAsParent: Task[];
 
   @Column({ name: 'project_id', nullable: true })
-  projectId: string | null;
+  projectId: string;
 
   // ADR-002: 移除关联装饰器，使用显式JOIN查询
   // project: Project;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any> | null;
+  metadata: Record<string, any>;
 
   @Column({ name: 'template_id', type: 'varchar', nullable: true })
-  templateId: string | null;
+  templateId: string;
 
   @Column({ name: 'started_at', type: 'timestamp', nullable: true })
-  startedAt: Date | null;
+  startedAt: Date;
 
   @Column({ name: 'blocked_at', type: 'timestamp', nullable: true })
-  blockedAt: Date | null;
+  blockedAt: Date;
 
   @Column({ name: 'block_reason', type: 'text', nullable: true })
-  blockReason: string | null;
+  blockReason: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
