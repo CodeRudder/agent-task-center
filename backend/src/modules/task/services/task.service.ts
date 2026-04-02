@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource } from "typeorm";
-import { Task, TaskStatus } from "../entities/task.entity";
+import { Task, TaskStatus, TaskPriority } from "../entities/task.entity";
 import { TaskStatusHistory, ChangedByType } from "../entities/task-status-history.entity";
 import { TaskStatusMachineService } from "./task-status-machine.service";
 import {
@@ -235,6 +235,42 @@ export class TaskService {
 
       return task;
     });
+  }
+
+  /**
+   * 分配任务给用户
+   */
+  async assignTask(taskId: string, assigneeId: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('任务不存在');
+    }
+    task.assigneeId = assigneeId;
+    return this.taskRepository.save(task);
+  }
+
+  /**
+   * 更新任务优先级
+   */
+  async updatePriority(taskId: string, priority: TaskPriority): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('任务不存在');
+    }
+    task.priority = priority;
+    return this.taskRepository.save(task);
+  }
+
+  /**
+   * 更新任务截止日期
+   */
+  async updateDueDate(taskId: string, dueDate: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('任务不存在');
+    }
+    task.dueDate = new Date(dueDate);
+    return this.taskRepository.save(task);
   }
 
   /**

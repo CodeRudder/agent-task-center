@@ -205,6 +205,33 @@ export class TaskController {
     );
   }
 
+  @Patch(":id/assign")
+  @ApiOperation({ summary: "Assign task to user" })
+  async assignTask(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() assignDto: { assigneeId: string },
+  ): Promise<Task> {
+    return this.taskService.assignTask(id, assignDto.assigneeId);
+  }
+
+  @Patch(":id/priority")
+  @ApiOperation({ summary: "Update task priority" })
+  async updatePriority(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() updatePriorityDto: { priority: string },
+  ): Promise<Task> {
+    return this.taskService.updatePriority(id, updatePriorityDto.priority);
+  }
+
+  @Patch(":id/duedate")
+  @ApiOperation({ summary: "Update task due date" })
+  async updateDueDate(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() updateDueDateDto: { dueDate: string },
+  ): Promise<Task> {
+    return this.taskService.updateDueDate(id, updateDueDateDto.dueDate);
+  }
+
   @Delete(":id")
   @ApiOperation({ summary: "Delete task" })
   async remove(
