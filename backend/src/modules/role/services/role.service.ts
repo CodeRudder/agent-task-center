@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from '../entities/role.entity';
@@ -6,6 +6,7 @@ import { UserRole } from '../entities/user-role.entity';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
 import { AssignRoleDto } from '../dto/assign-role.dto';
+import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 
 @Injectable()
 export class RoleService {
@@ -98,7 +99,7 @@ export class RoleService {
 
     // Check if trying to delete system role
     if (role.isSystem) {
-      throw new BadRequestException('Cannot delete system role');
+      throw new ForbiddenException('Cannot delete system role');
     }
 
     // Check if role is assigned to any users
@@ -170,5 +171,42 @@ export class RoleService {
       reports: ['view', 'create', 'export'],
       api: ['view', 'create', 'delete', 'manage'],
     };
+  }
+
+  async assignPermissions(id: string, assignPermissionsDto: AssignPermissionsDto): Promise<Role> {
+    const role = await this.findOne(id);
+
+    // Check if trying to update system role
+    if (role.isSystem) {
+      throw new ForbiddenException('Cannot modify system role permissions');
+    }
+
+    // Parse permissions array into permission object
+    const permissionsObject: Record<string, string[]> = {};
+    const validResources = ['tasks', 'projects', 'users', 'webhooks', 'roles', 'reports', 'api'];
+
+    for (const permission of assignPermissionsDto.permissions) {
+      // Permission format: resource.action (e.g., tasks.view, projects.create)
+      const [resource, action] = permission.split('.');
+
+      if (!resource || !action) {
+        throw new BadRequestException(`Invalid permission format: ${permission}. Expected format: resource.action`);
+      }
+
+      if (!validResources.includes(resource)) {
+        throw new BadRequestException(`Invalid resource: ${resource}`);
+      }
+
+      if (!permissionsObject[resource]) {
+        permissionsObject[resource] = [];
+      }
+
+      if (!permissionsObject[resource].includes(action)) {
+        permissionsObject[resource].push(action);
+      }
+    }
+
+    role.permissions = permissionsObject;
+    return this.roleRepository.save(role);
   }
 }

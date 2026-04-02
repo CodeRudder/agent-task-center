@@ -17,6 +17,7 @@ import { RoleService } from '../services/role.service';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
 import { AssignRoleDto } from '../dto/assign-role.dto';
+import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 
 // Simple interface for request with user
 interface RequestWithUser extends Request {
@@ -86,6 +87,13 @@ export class RoleController {
   @ApiResponse({ status: 200, description: 'Role removed successfully' })
   async removeFromUser(@Param('roleId') roleId: string, @Param('userId') userId: string) {
     return this.roleService.removeFromUser(roleId, userId);
+  }
+
+  @Post(':id/permissions')
+  @ApiOperation({ summary: 'Assign permissions to role' })
+  @ApiResponse({ status: 200, description: 'Permissions assigned successfully' })
+  async assignPermissions(@Param('id') id: string, @Body() assignPermissionsDto: AssignPermissionsDto) {
+    return this.roleService.assignPermissions(id, assignPermissionsDto);
   }
 
   @Get('permissions/list')

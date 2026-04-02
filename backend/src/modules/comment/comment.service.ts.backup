@@ -72,9 +72,10 @@ export class CommentService {
 
     // 3. 发送通知（在事务外执行，避免影响评论创建）
     try {
-      // ADR-002: 移除关联查询
+      // 获取完整的评论信息（包括关联数据）
       const fullComment = await this.commentRepository.findOne({
         where: { id: comment.id },
+        relations: ['task', 'task.creator', 'parent', 'parent.author'],
       });
 
       if (fullComment) {
@@ -118,7 +119,7 @@ export class CommentService {
 
     const [comments, total] = await this.commentRepository.findAndCount({
       where: { taskId, parentId: IsNull() }, // 只查询顶级评论
-      // ADR-002: 移除关联查询
+      relations: ['author', 'mentions', 'mentions.mentionedUser', 'replies', 'replies.author'],
       order: { createdAt: 'DESC' },
       skip,
       take: pageSize,
@@ -134,9 +135,9 @@ export class CommentService {
 
   // 查询单个评论
   async findOne(id: string): Promise<Comment> {
-    // ADR-002: 移除关联查询
     const comment = await this.commentRepository.findOne({
       where: { id },
+      relations: ['author', 'mentions', 'mentions.mentionedUser', 'histories', 'histories.editor'],
     });
 
     if (!comment) {
@@ -226,82 +227,10 @@ export class CommentService {
 
     const histories = await this.historyRepository.find({
       where: { commentId },
+      relations: ['editor'],
       order: { editedAt: 'DESC' },
     });
 
     return histories;
-  }
-
-  // 获取所有评论列表（BUG-015、BUG-020、BUG-021修复）
-  async findAll(page: number = 1, limit: number = 10, taskId?: string) {
-    const skip = (page - 1) * limit;
-
-    const whereCondition: any = {};
-    if (taskId) {
-      whereCondition.taskId = taskId;
-    }
-
-    const [comments, total] = await this.commentRepository.findAndCount({
-      where: whereCondition,
-      // ADR-002: 移除关联查询
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
-
-    return {
-      total,
-      page,
-      limit,
-      comments,
-    };
-  }
-
-  // 创建评论回复（BUG-020修复）
-  async createReply(
-    userId: string,
-    parentId: string,
-    createCommentDto: CreateCommentDto,
-  ): Promise<Comment> {
-    // 验证父评论是否存在
-    const parentComment = await this.commentRepository.findOne({
-      where: { id: parentId },
-    });
-
-    if (!parentComment) {
-      throw new NotFoundException('父评论不存在');
-    }
-
-    // 创建回复评论
-    return this.create(userId, {
-      ...createCommentDto,
-      parentId,
-      taskId: parentComment.taskId,
-    });
-  }
-
-  // 评论点赞（BUG-021修复）
-  async likeComment(
-    userId: string,
-    commentId: string,
-  ): Promise<{ message: string; likes: number }> {
-    const comment = await this.commentRepository.findOne({
-      where: { id: commentId },
-    });
-
-    if (!comment) {
-      throw new NotFoundException('评论不存在');
-    }
-
-    // TODO: 实现点赞功能
-    // 1. 检查用户是否已点赞
-    // 2. 如果未点赞，添加点赞记录
-    // 3. 更新评论的点赞数
-
-    // 暂时返回成功消息
-    return {
-      message: '点赞成功',
-      likes: 0,
-    };
   }
 }

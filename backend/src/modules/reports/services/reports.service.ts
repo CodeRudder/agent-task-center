@@ -80,4 +80,79 @@ export class ReportsService {
       },
     };
   }
+
+  async exportReport(format: string, type?: string) {
+    // TODO: Implement export logic
+    // For now, return mock data
+    const data = {
+      type: type || 'tasks',
+      format: format || 'csv',
+      generatedAt: new Date().toISOString(),
+      data: [
+        {
+          id: 'uuid-1',
+          title: '完成用户登录功能',
+          status: 'completed',
+          priority: 'high',
+          completedAt: '2026-04-01T10:00:00Z',
+        },
+        {
+          id: 'uuid-2',
+          title: '实现数据导出功能',
+          status: 'in_progress',
+          priority: 'medium',
+          completedAt: null,
+        },
+      ],
+    };
+
+    // In real implementation, convert data based on format
+    // For CSV: convert to CSV string
+    // For JSON: return as is
+    // For PDF: generate PDF file
+
+    return data;
+  }
+
+  async generateCustomReport(customReportDto: any) {
+    // TODO: Implement custom report generation logic
+    const { name, dataSources, filters, metrics } = customReportDto;
+
+    return {
+      id: 'custom-' + Date.now(),
+      name,
+      dataSources,
+      filters,
+      metrics,
+      generatedAt: new Date().toISOString(),
+      data: {
+        summary: {
+          totalTasks: 150,
+          completedTasks: 120,
+          overdueTasks: 8,
+          completionRate: 0.8,
+        },
+        details: [
+          {
+            dataSource: 'tasks',
+            metrics: {
+              total: 150,
+              completed: 120,
+              inProgress: 22,
+              overdue: 8,
+            },
+          },
+          {
+            dataSource: 'projects',
+            metrics: {
+              total: 15,
+              active: 12,
+              completed: 3,
+              onTime: 10,
+            },
+          },
+        ],
+      },
+    };
+  }
 }

@@ -20,10 +20,14 @@ export class ApiKeysService {
     const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
     const keyPrefix = apiKey.substring(0, 8);
 
+    // Handle both scopes and permissions fields for compatibility
+    const permissions = createApiKeyDto.scopes || createApiKeyDto.permissions || [];
+
     const newApiKey = this.apiKeyRepository.create({
       ...createApiKeyDto,
       keyHash,
       keyPrefix,
+      permissions,
       createdBy: userId,
       expiresAt: createApiKeyDto.expiresAt ? new Date(createApiKeyDto.expiresAt) : null,
     });

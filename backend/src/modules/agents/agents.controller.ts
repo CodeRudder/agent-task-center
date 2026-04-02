@@ -3,6 +3,8 @@ import {
   Get,
   Post,
   Put,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -68,6 +70,33 @@ export class AgentsController {
       success: true,
       data: agent,
       message: 'Agent updated successfully',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: string,
+  ) {
+    const agent = await this.agentsService.updateStatus(id, status);
+    
+    return {
+      success: true,
+      data: agent,
+      message: 'Agent status updated successfully',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.agentsService.remove(id);
+    
+    return {
+      success: true,
+      message: 'Agent deleted successfully',
       timestamp: new Date().toISOString(),
     };
   }

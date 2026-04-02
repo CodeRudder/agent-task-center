@@ -1,10 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ReportsService } from '../services/reports.service';
 import { TrendQueryDto } from '../dto/trend-query.dto';
 import { ComparisonQueryDto } from '../dto/comparison-query.dto';
 import { RisksQueryDto } from '../dto/risks-query.dto';
+import { ExportQueryDto } from '../dto/export-query.dto';
+import { CustomReportDto } from '../dto/custom-report.dto';
 
 @ApiTags('reports')
 @Controller('reports')
@@ -37,5 +39,21 @@ export class ReportsController {
   @ApiQuery({ name: 'level', required: false })
   async getRisks(@Query() query: RisksQueryDto) {
     return this.reportsService.getRiskAnalysis(query.level || 'high,medium,low');
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export report' })
+  @ApiResponse({ status: 200, description: 'Report exported successfully' })
+  @ApiQuery({ name: 'format', required: false })
+  @ApiQuery({ name: 'type', required: false })
+  async exportReport(@Query() query: ExportQueryDto) {
+    return this.reportsService.exportReport(query.format || 'csv', query.type);
+  }
+
+  @Post('custom')
+  @ApiOperation({ summary: 'Generate custom report' })
+  @ApiResponse({ status: 201, description: 'Custom report generated successfully' })
+  async generateCustomReport(@Body() customReportDto: CustomReportDto) {
+    return this.reportsService.generateCustomReport(customReportDto);
   }
 }
