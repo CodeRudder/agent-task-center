@@ -30,27 +30,31 @@ export class ProjectService {
 
     try {
       // 创建项目
-      const project = this.projectRepository.create({
-        ...createProjectDto,
-        ownerId: userId,
-      });
-      await queryRunner.manager.save(project);
+      const project = new Project();
+      project.name = createProjectDto.name;
+      project.description = createProjectDto.description || '';
+      project.status = createProjectDto.status || 'active';
+      project.startDate = createProjectDto.startDate ? new Date(createProjectDto.startDate) : null;
+      project.endDate = createProjectDto.endDate ? new Date(createProjectDto.endDate) : null;
+      project.ownerId = userId;
+
+      const savedProject = await queryRunner.manager.save(project);
 
       // 自动将创建者添加为项目owner
-      const member = this.memberRepository.create({
-        projectId: project.id,
-        userId: userId,
-        role: ProjectMemberRole.OWNER,
-      });
+      const member = new ProjectMember();
+      member.projectId = savedProject.id;
+      member.userId = userId;
+      member.role = ProjectMemberRole.OWNER;
+
       await queryRunner.manager.save(member);
 
       await queryRunner.commitTransaction();
 
       // 返回项目信息（ADR-002: 移除关联查询）
-      const savedProject = await this.projectRepository.findOne({
-        where: { id: project.id },
+      const resultProject = await this.projectRepository.findOne({
+        where: { id: savedProject.id },
       });
-      return savedProject!;
+      return resultProject!;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -62,7 +66,7 @@ export class ProjectService {
   /**
    * 获取用户的项目列表
    */
-  async findAll(userId: string): Promise<Project[]> {
+  async findAll(userId: string, status?: string): Promise<Project[]> {
     // 获取用户是成员的所有项目ID（ADR-002: 移除关联查询）
     const members = await this.memberRepository.find({
       where: { userId },
@@ -70,9 +74,17 @@ export class ProjectService {
 
     const projectIds = members.map(member => member.projectId);
 
+    // 构建查询条件
+    const whereCondition: any = { id: { $in: projectIds } as any };
+
+    // 如果提供了status参数，添加过滤条件
+    if (status) {
+      whereCondition.status = status;
+    }
+
     // 手动查询项目
     const projects = await this.projectRepository.find({
-      where: { id: { $in: projectIds } as any },
+      where: whereCondition,
     });
 
     return projects;
@@ -133,11 +145,58 @@ export class ProjectService {
     const updatedProject = await this.projectRepository.findOne({
       where: { id: projectId },
     });
-    
+
     if (!updatedProject) {
       throw new NotFoundException('项目不存在');
     }
-    
+
+    return updatedProject;
+  }
+
+  /**
+   * 更新项目状态
+   */
+  async updateStatus(
+    userId: string,
+    projectId: string,
+    status: string,
+  ): Promise<Project> {
+    // 验证状态值
+    const validStatuses = ['active', 'archived', 'deleted'];
+    if (!validStatuses.includes(status)) {
+      throw new ForbiddenException('无效的状态值');
+    }
+
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      throw new NotFoundException('项目不存在');
+    }
+
+    // 检查权限：只有owner和admin可以更新状态
+    const member = await this.memberRepository.findOne({
+      where: { projectId, userId },
+    });
+
+    if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
+      throw new ForbiddenException('无权更新项目状态');
+    }
+
+    // 更新状态
+    project.status = status;
+    await this.projectRepository.save(project);
+
+    // ADR-002: 移除关联查询
+    const updatedProject = await this.projectRepository.findOne({
+      where: { id: projectId },
+    });
+
+    if (!updatedProject) {
+      throw new NotFoundException('项目不存在');
+    }
+
     return updatedProject;
   }
 
@@ -153,8 +212,12 @@ export class ProjectService {
       throw new NotFoundException('项目不存在');
     }
 
-    // 检查权限：只有owner可以删除
-    if (project.ownerId !== userId) {
+    // 检查权限：owner和admin都可以删除
+    const member = await this.memberRepository.findOne({
+      where: { projectId, userId },
+    });
+
+    if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
       throw new ForbiddenException('无权删除该项目');
     }
 
@@ -219,22 +282,22 @@ export class ProjectService {
    * 移除项目成员
    */
   async removeMember(
-    userId: string,
+    currentUserId: string,
     projectId: string,
-    memberId: string,
+    targetUserId: string,
   ): Promise<void> {
     // 检查权限：只有owner和admin可以移除成员
     const currentMember = await this.memberRepository.findOne({
-      where: { projectId, userId },
+      where: { projectId, userId: currentUserId },
     });
 
     if (!currentMember || (currentMember.role !== ProjectMemberRole.OWNER && currentMember.role !== ProjectMemberRole.ADMIN)) {
       throw new ForbiddenException('无权移除项目成员');
     }
 
-    // 查找要移除的成员
+    // 查找要移除的成员（通过userId）
     const member = await this.memberRepository.findOne({
-      where: { id: memberId, projectId },
+      where: { projectId, userId: targetUserId },
     });
 
     if (!member) {

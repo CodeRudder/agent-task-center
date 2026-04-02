@@ -3,9 +3,11 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -35,8 +37,11 @@ export class ProjectController {
 
   @Get()
   @ApiOperation({ summary: '获取项目列表' })
-  async findAll(@Request() req: RequestWithUser) {
-    return await this.projectService.findAll(req.user.id);
+  async findAll(
+    @Request() req: RequestWithUser,
+    @Query('status') status?: string,
+  ) {
+    return await this.projectService.findAll(req.user.id, status);
   }
 
   @Get(':id')
@@ -53,6 +58,16 @@ export class ProjectController {
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
     return await this.projectService.update(req.user.id, id, updateProjectDto);
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: '更新项目状态' })
+  async updateStatus(
+    @Request() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body('status') status: string,
+  ) {
+    return await this.projectService.updateStatus(req.user.id, id, status);
   }
 
   @Delete(':id')
@@ -78,14 +93,14 @@ export class ProjectController {
     return await this.projectService.addMember(req.user.id, id, addMemberDto);
   }
 
-  @Delete(':id/members/:memberId')
+  @Delete(':id/members/:userId')
   @ApiOperation({ summary: '移除项目成员' })
   async removeMember(
     @Request() req: RequestWithUser,
     @Param('id') id: string,
-    @Param('memberId') memberId: string,
+    @Param('userId') userId: string,
   ) {
-    await this.projectService.removeMember(req.user.id, id, memberId);
+    await this.projectService.removeMember(req.user.id, id, userId);
     return { message: '成员移除成功' };
   }
 
