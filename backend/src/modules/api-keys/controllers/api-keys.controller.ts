@@ -37,7 +37,8 @@ export class ApiKeysController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete API key' })
   @ApiResponse({ status: 204, description: 'API key deleted successfully' })
-  async remove(@Param('id') id: string) {
-    return this.apiKeysService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const userId = (req.user as any).id;
+    return this.apiKeysService.remove(id, userId);
   }
 }

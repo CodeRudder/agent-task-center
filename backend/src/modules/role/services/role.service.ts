@@ -90,7 +90,50 @@ export class RoleService {
       }
     }
 
-    Object.assign(role, updateRoleDto);
+    // Handle permissions field - support both object and array formats
+    if (updateRoleDto.permissions) {
+      // Check if permissions is an array (string array format)
+      if (Array.isArray(updateRoleDto.permissions)) {
+        // Convert string array format to object format
+        const permissionsObject: Record<string, string[]> = {};
+        const validResources = ['tasks', 'projects', 'users', 'webhooks', 'roles', 'reports', 'api'];
+
+        for (const permission of (updateRoleDto.permissions as any)) {
+          // Permission format: resource.action (e.g., tasks.view, projects.create)
+          const [resource, action] = (permission as string).split('.');
+
+          if (!resource || !action) {
+            throw new BadRequestException(`Invalid permission format: ${permission}. Expected format: resource.action`);
+          }
+
+          if (!validResources.includes(resource)) {
+            throw new BadRequestException(`Invalid resource: ${resource}`);
+          }
+
+          if (!permissionsObject[resource]) {
+            permissionsObject[resource] = [];
+          }
+
+          if (!permissionsObject[resource].includes(action)) {
+            permissionsObject[resource].push(action);
+          }
+        }
+
+        role.permissions = permissionsObject;
+      } else {
+        // Object format - use as is
+        role.permissions = updateRoleDto.permissions as Record<string, string[]>;
+      }
+    }
+
+    // Update other fields
+    if (updateRoleDto.name !== undefined) {
+      role.name = updateRoleDto.name;
+    }
+    if (updateRoleDto.description !== undefined) {
+      role.description = updateRoleDto.description;
+    }
+
     return this.roleRepository.save(role);
   }
 
@@ -181,28 +224,34 @@ export class RoleService {
       throw new ForbiddenException('Cannot modify system role permissions');
     }
 
-    // Parse permissions array into permission object
-    const permissionsObject: Record<string, string[]> = {};
+    let permissionsObject: Record<string, string[]> = {};
     const validResources = ['tasks', 'projects', 'users', 'webhooks', 'roles', 'reports', 'api'];
 
-    for (const permission of assignPermissionsDto.permissions) {
-      // Permission format: resource.action (e.g., tasks.view, projects.create)
-      const [resource, action] = permission.split('.');
+    // Check if permissions is an object (object format) or array (string array format)
+    if (!Array.isArray(assignPermissionsDto.permissions)) {
+      // Object format - use as is
+      permissionsObject = assignPermissionsDto.permissions as any;
+    } else {
+      // String array format - convert to object format
+      for (const permission of assignPermissionsDto.permissions) {
+        // Permission format: resource.action (e.g., tasks.view, projects.create)
+        const [resource, action] = permission.split('.');
 
-      if (!resource || !action) {
-        throw new BadRequestException(`Invalid permission format: ${permission}. Expected format: resource.action`);
-      }
+        if (!resource || !action) {
+          throw new BadRequestException(`Invalid permission format: ${permission}. Expected format: resource.action`);
+        }
 
-      if (!validResources.includes(resource)) {
-        throw new BadRequestException(`Invalid resource: ${resource}`);
-      }
+        if (!validResources.includes(resource)) {
+          throw new BadRequestException(`Invalid resource: ${resource}`);
+        }
 
-      if (!permissionsObject[resource]) {
-        permissionsObject[resource] = [];
-      }
+        if (!permissionsObject[resource]) {
+          permissionsObject[resource] = [];
+        }
 
-      if (!permissionsObject[resource].includes(action)) {
-        permissionsObject[resource].push(action);
+        if (!permissionsObject[resource].includes(action)) {
+          permissionsObject[resource].push(action);
+        }
       }
     }
 

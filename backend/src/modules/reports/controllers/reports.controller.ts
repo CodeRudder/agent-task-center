@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ReportsService } from '../services/reports.service';
@@ -14,6 +14,34 @@ import { CustomReportDto } from '../dto/custom-report.dto';
 @ApiBearerAuth()
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all reports' })
+  @ApiResponse({ status: 200, description: 'Reports retrieved successfully' })
+  async findAll() {
+    return this.reportsService.findAll();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get report details' })
+  @ApiResponse({ status: 200, description: 'Report details retrieved successfully' })
+  async findOne(@Param('id') id: string) {
+    return this.reportsService.findOne(id);
+  }
+
+  @Post('tasks')
+  @ApiOperation({ summary: 'Generate task report' })
+  @ApiResponse({ status: 201, description: 'Task report generated successfully' })
+  async generateTaskReport(@Body() body: any) {
+    return this.reportsService.generateTaskReport(body);
+  }
+
+  @Post('projects')
+  @ApiOperation({ summary: 'Generate project report' })
+  @ApiResponse({ status: 201, description: 'Project report generated successfully' })
+  async generateProjectReport(@Body() body: any) {
+    return this.reportsService.generateProjectReport(body);
+  }
 
   @Get('trend')
   @ApiOperation({ summary: 'Get trend analysis' })

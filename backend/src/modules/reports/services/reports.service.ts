@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReportAnalytics } from '../entities/report-analytics.entity';
@@ -9,6 +9,106 @@ export class ReportsService {
     @InjectRepository(ReportAnalytics)
     private reportAnalyticsRepository: Repository<ReportAnalytics>,
   ) {}
+
+  async findAll() {
+    try {
+      // For now, return empty array since reports table may not exist
+      // TODO: Implement proper report listing from database
+      return { data: [], total: 0 };
+    } catch (error) {
+      // Check if error is related to missing table
+      if (error.message && error.message.includes('relation') && error.message.includes('does not exist')) {
+        // Return empty array if table doesn't exist
+        return { data: [], total: 0 };
+      }
+      throw error;
+    }
+  }
+
+  async findOne(id: string) {
+    try {
+      // For now, throw NotFoundException since reports table may not exist
+      // TODO: Implement proper report retrieval from database
+      throw new NotFoundException('Report not found');
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      // Check if error is related to missing table
+      if (error.message && error.message.includes('relation') && error.message.includes('does not exist')) {
+        throw new NotFoundException('Report not found');
+      }
+      throw error;
+    }
+  }
+
+  async generateTaskReport(options?: any) {
+    try {
+      // Generate task report with mock data
+      return {
+        id: 'task-report-' + Date.now(),
+        type: 'tasks',
+        generatedAt: new Date().toISOString(),
+        summary: {
+          total: 150,
+          completed: 120,
+          inProgress: 22,
+          todo: 8,
+          completionRate: 0.8,
+        },
+        details: {
+          byStatus: {
+            completed: 120,
+            inProgress: 22,
+            todo: 8,
+          },
+          byPriority: {
+            high: 45,
+            medium: 60,
+            low: 45,
+          },
+          byAssignee: [
+            { name: '张三', completed: 45, inProgress: 8, todo: 5 },
+            { name: '李四', completed: 38, inProgress: 6, todo: 2 },
+            { name: '王五', completed: 37, inProgress: 8, todo: 1 },
+          ],
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async generateProjectReport(options?: any) {
+    try {
+      // Generate project report with mock data
+      return {
+        id: 'project-report-' + Date.now(),
+        type: 'projects',
+        generatedAt: new Date().toISOString(),
+        summary: {
+          total: 15,
+          active: 12,
+          completed: 3,
+          onTime: 10,
+        },
+        details: {
+          byStatus: {
+            active: 12,
+            completed: 3,
+            onHold: 0,
+          },
+          byProgress: [
+            { name: '项目A', progress: 0.85, status: 'active' },
+            { name: '项目B', progress: 0.65, status: 'active' },
+            { name: '项目C', progress: 1.0, status: 'completed' },
+          ],
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async getTrendAnalysis(timeRange: string, metrics: string) {
     // TODO: Implement trend analysis logic

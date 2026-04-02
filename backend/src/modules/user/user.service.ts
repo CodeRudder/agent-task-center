@@ -170,6 +170,15 @@ export class UserService {
       where: { id: { $in: permissionIds } as any },
     });
 
+    // Convert Permission[] to PermissionDto[]
+    const permissionDtos = permissions.map(p => ({
+      id: p.id,
+      name: p.name,
+      resource: p.resourceType,
+      action: p.action,
+      description: p.description,
+    }));
+
     return {
       id: user.id,
       username: user.username,
@@ -179,7 +188,7 @@ export class UserService {
       status: user.isActive ? 'active' : 'disabled',
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
-      permissions,
+      permissions: permissionDtos,
     };
   }
 }

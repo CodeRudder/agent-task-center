@@ -16,47 +16,76 @@ export class ApiKeysService {
   ) {}
 
   async create(createApiKeyDto: CreateApiKeyDto, userId: string) {
-    const apiKey = this.generateApiKey();
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
-    const keyPrefix = apiKey.substring(0, 8);
+    try {
+      const apiKey = this.generateApiKey();
+      const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+      const keyPrefix = apiKey.substring(0, 8);
 
-    // Handle both scopes and permissions fields for compatibility
-    const permissions = createApiKeyDto.scopes || createApiKeyDto.permissions || [];
+      // Handle both scopes and permissions fields for compatibility
+      const permissions = createApiKeyDto.scopes || createApiKeyDto.permissions || [];
 
-    const newApiKey = this.apiKeyRepository.create({
-      ...createApiKeyDto,
-      keyHash,
-      keyPrefix,
-      permissions,
-      createdBy: userId,
-      expiresAt: createApiKeyDto.expiresAt ? new Date(createApiKeyDto.expiresAt) : null,
-    });
+      const newApiKey = this.apiKeyRepository.create({
+        ...createApiKeyDto,
+        keyHash,
+        keyPrefix,
+        permissions,
+        createdBy: userId,
+        expiresAt: createApiKeyDto.expiresAt ? new Date(createApiKeyDto.expiresAt) : null,
+      });
 
-    const saved = await this.apiKeyRepository.save(newApiKey) as ApiKey;
+      const saved = await this.apiKeyRepository.save(newApiKey) as ApiKey;
 
-    return {
-      id: saved.id,
-      name: saved.name,
-      key: apiKey, // Only return once
-      keyPrefix: saved.keyPrefix,
-      permissions: saved.permissions,
-      isActive: saved.isActive,
-      expiresAt: saved.expiresAt,
-      createdAt: saved.createdAt,
-    };
+      return {
+        id: saved.id,
+        name: saved.name,
+        key: apiKey, // Only return once
+        keyPrefix: saved.keyPrefix,
+        permissions: saved.permissions,
+        isActive: saved.isActive,
+        expiresAt: saved.expiresAt,
+        createdAt: saved.createdAt,
+      };
+    } catch (error) {
+      // Check if error is related to missing table
+      if (error.message && error.message.includes('relation') && error.message.includes('does not exist')) {
+        throw new Error('API Keys table does not exist. Please run database migrations.');
+      }
+      throw error;
+    }
   }
 
   async findAll(isActive?: boolean) {
-    const where = isActive !== undefined ? { isActive } : {};
-    const [data, total] = await this.apiKeyRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-    });
+    try {
+      const where = isActive !== undefined ? { isActive } : {};
+      const [data, total] = await this.apiKeyRepository.findAndCount({
+        where,
+        order: { createdAt: 'DESC' },
+      });
 
-    return { data, total };
+      return { data, total };
+    } catch (error) {
+      // Check if error is related to missing table
+      if (error.message && error.message.includes('relation') && error.message.includes('does not exist')) {
+        throw new Error('API Keys table does not exist. Please run database migrations.');
+      }
+      throw error;
+    }
   }
 
-  async remove(id: string) {
+  async remove(id: string, userId?: string) {
+    const apiKey = await this.apiKeyRepository.findOne({
+      where: { id },
+    });
+
+    if (!apiKey) {
+      throw new Error('API Key not found');
+    }
+
+    // Check if user has permission to delete (only creator can delete)
+    if (userId && apiKey.createdBy !== userId) {
+      throw new Error('You do not have permission to delete this API Key');
+    }
+
     await this.apiKeyRepository.delete(id);
   }
 
