@@ -5,15 +5,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  ManyToOne,
-  OneToMany,
-  ManyToMany,
-  JoinColumn,
-  JoinTable,
   Index,
 } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Task } from '../../task/entities/task.entity';
 
 export enum ProjectStatus {
   ACTIVE = 'active',
@@ -57,16 +50,15 @@ export class Project {
   @Column({ name: 'owner_id' })
   ownerId: string;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'owner_id' })
-  owner: User;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // owner: User;
 
-  @OneToMany(() => Task, (task) => task.project)
-  tasks: Task[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // tasks: Task[];
 
   // 项目成员关系（通过ProjectMember中间表）
-  @OneToMany(() => ProjectMember, (member) => member.project)
-  members: ProjectMember[];
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // members: ProjectMember[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
@@ -90,16 +82,14 @@ export class ProjectMember {
   @Column({ name: 'project_id' })
   projectId: string;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'project_id' })
-  project: Project;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // project: Project;
 
   @Column({ name: 'user_id' })
   userId: string;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  // ADR-002: 移除关联装饰器，使用显式JOIN查询
+  // user: User;
 
   @Column({
     type: 'enum',
