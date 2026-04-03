@@ -64,8 +64,8 @@ export class AgentsService {
     if (capabilities) {
       const capabilityArray = capabilities.split(',').map((c) => c.trim());
       capabilityArray.forEach((capability, index) => {
-        queryBuilder.andWhere(`${index === 0 ? 'agent.capabilities' : 'agent.capategies'} @> :capability${index}`, {
-          [`capability${index}`]: JSON.stringify([capability]),
+        queryBuilder.andWhere('agent.capabilities @> :capability', {
+          capability: JSON.stringify([capability]),
         });
       });
     }
