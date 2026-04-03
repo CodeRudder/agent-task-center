@@ -40,8 +40,12 @@ export class ProjectController {
   async findAll(
     @Request() req: RequestWithUser,
     @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
-    return await this.projectService.findAll(req.user.id, status);
+    const pageNumber = page ? Number(page) : 1;
+    const pageSizeNumber = pageSize ? Number(pageSize) : 10;
+    return await this.projectService.findAll(req.user.id, status, pageNumber, pageSizeNumber);
   }
 
   @Get(':id')

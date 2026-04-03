@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Request, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Request, Query, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, AuthResponseDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
@@ -20,6 +20,7 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Login with email and password' })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
@@ -62,6 +63,7 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Request password reset email' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<any> {
     return this.authService.forgotPassword(forgotPasswordDto.email);

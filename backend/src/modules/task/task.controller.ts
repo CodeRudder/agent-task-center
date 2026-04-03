@@ -66,7 +66,15 @@ export class TaskController {
     @Query("page") page?: number,
     @Query("pageSize") pageSize?: number,
     @Query("since") since?: string,
-  ): Promise<{ items: Task[]; total: number }> {
+  ): Promise<{
+    tasks: Task[];
+    pagination: {
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
     return this.taskService.findAll({
       status,
       assigneeId,

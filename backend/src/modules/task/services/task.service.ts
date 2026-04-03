@@ -49,7 +49,15 @@ export class TaskService {
     page?: number;
     pageSize?: number;
     since?: string; // Phase 1: 增量查询 - 只返回指定时间后更新的任务
-  }): Promise<{ items: Task[]; total: number }> {
+  }): Promise<{
+    tasks: Task[];
+    pagination: {
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
     const { status, assigneeId, search, page = 1, pageSize = 10, since } = options;
 
     const queryBuilder = this.taskRepository
@@ -88,7 +96,15 @@ export class TaskService {
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
-    return { items, total };
+    return {
+      tasks: items,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Task> {

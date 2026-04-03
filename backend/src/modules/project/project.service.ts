@@ -66,13 +66,26 @@ export class ProjectService {
   /**
    * 获取用户的项目列表
    */
-  async findAll(userId: string, status?: string): Promise<Project[]> {
+  async findAll(
+    userId: string,
+    status?: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<{
+    projects: Project[];
+    pagination: {
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
     // 获取用户是成员的所有项目ID（ADR-002: 移除关联查询）
     const members = await this.memberRepository.find({
       where: { userId },
     });
 
-    const projectIds = members.map(member => member.projectId);
+    const projectIds = members.map((member) => member.projectId);
 
     // 构建查询条件
     const whereCondition: Record<string, any> = { id: In(projectIds) };
@@ -82,12 +95,30 @@ export class ProjectService {
       whereCondition.status = status;
     }
 
-    // 手动查询项目
-    const projects = await this.projectRepository.find({
+    // 先获取总数
+    const total = await this.projectRepository.count({
       where: whereCondition,
     });
 
-    return projects;
+    // 分页查询项目
+    const projects = await this.projectRepository.find({
+      where: whereCondition,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      projects,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
   }
 
   /**
