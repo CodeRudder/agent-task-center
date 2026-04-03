@@ -20,11 +20,16 @@ export class RegisterDto {
 
 export class LoginDto {
   @ApiProperty({ example: 'user@example.com' })
-  @IsEmail()
+  @IsEmail({}, {
+    message: '邮箱格式不正确'
+  })
   email: string;
 
   @ApiProperty({ example: 'password123' })
   @IsString()
+  @MinLength(6, {
+    message: '密码长度至少6位'
+  })
   password: string;
 
   @ApiPropertyOptional({ example: false })
@@ -68,7 +73,11 @@ export class ResetPasswordDto {
 
   @ApiProperty({ example: 'newPassword123' })
   @IsString()
-  @MinLength(8)
-  @MaxLength(20)
+  @MinLength(8, {
+    message: '密码长度至少8位'
+  })
+  @MaxLength(20, {
+    message: '密码长度不能超过20位'
+  })
   newPassword: string;
 }
