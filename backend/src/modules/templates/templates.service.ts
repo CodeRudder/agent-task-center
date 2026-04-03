@@ -39,9 +39,9 @@ export class TemplatesService {
   ): Promise<{ items: TaskTemplate[]; total: number }> {
     const { page = 1, pageSize = 10, category, isActive, keyword } = queryDto;
 
+    // ADR-002 v2.1: 移除关联查询
     const queryBuilder = this.templateRepository
       .createQueryBuilder('template')
-      .leftJoinAndSelect('template.createdBy', 'createdBy')
       .where('template.deletedAt IS NULL');
 
     if (category) {

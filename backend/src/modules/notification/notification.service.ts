@@ -52,9 +52,9 @@ export class NotificationService {
   }
 
   async findOne(id: string, agentId: string): Promise<Notification> {
+    // ADR-002 v2.1: 移除关联查询
     const notification = await this.notificationRepository.findOne({
       where: { id },
-      relations: ['recipient', 'sender', 'relatedTask'],
     });
 
     if (!notification) {

@@ -35,9 +35,9 @@ export class TaskDependencyService {
   }
 
   async findByTask(taskId: string): Promise<TaskDependency[]> {
+    // ADR-002 v2.1: 移除关联查询
     return this.dependencyRepo.find({
       where: { taskId },
-      relations: ['dependsOnTask'],
     });
   }
 

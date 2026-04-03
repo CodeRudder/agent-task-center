@@ -55,8 +55,8 @@ export class StatisticsService {
   async getWorkloadStatistics(query: TaskStatisticsQueryDto): Promise<WorkloadStatisticsResponseDto> {
     const { startDate, endDate } = await this.parseQuery(query);
     
-    const queryBuilder = this.taskRepository.createQueryBuilder('task')
-      .leftJoinAndSelect('task.assignee', 'user');
+    // ADR-002 v2.1: 移除关联查询，只查询task表
+    const queryBuilder = this.taskRepository.createQueryBuilder('task');
 
     if (startDate && endDate) {
       queryBuilder.andWhere('task.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });

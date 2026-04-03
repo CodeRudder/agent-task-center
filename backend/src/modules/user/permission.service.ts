@@ -65,11 +65,16 @@ export class PermissionService {
    * 获取指定角色的权限
    */
   async getPermissionsByRole(role: string): Promise<Permission[]> {
-    const rolePermissions = await this.rolePermissionRepository.find({
-      where: { role },
-      relations: ['permission'],
-    });
+    // ADR-002 v2.1: 使用显式JOIN查询，移除relations选项
+    const rolePermissions = await this.rolePermissionRepository
+      .createQueryBuilder('rp')
+      .leftJoin('rp.permission', 'permission')
+      .select(['rp.id', 'rp.role', 'rp.permissionId', 'permission.id', 'permission.name', 'permission.description', 'permission.resource'])
+      .where('rp.role = :role', { role })
+      .getMany();
 
-    return rolePermissions.map((rp) => rp.permission);
+    return rolePermissions
+      .filter((rp) => rp.permission)
+      .map((rp) => rp.permission);
   }
 }
