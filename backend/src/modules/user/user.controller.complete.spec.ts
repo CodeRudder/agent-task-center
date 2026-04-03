@@ -9,7 +9,6 @@ describe('UserController - Complete Coverage', () => {
     findById: jest.fn(),
     findByEmail: jest.fn(),
     findAll: jest.fn(),
-    updateProfile: jest.fn(),
   };
 
   beforeEach(() => {
@@ -17,7 +16,7 @@ describe('UserController - Complete Coverage', () => {
     controller = new UserController(service);
   });
 
-  describe('getProfile', () => {
+  describe('getCurrentUser', () => {
     it('should return current user profile', async () => {
       const mockRequest = {
         user: { id: 'user-1' },
@@ -31,7 +30,7 @@ describe('UserController - Complete Coverage', () => {
 
       mockUserService.findById.mockResolvedValue(mockUser);
 
-      const result = await controller.getProfile(mockRequest);
+      const result = await controller.getCurrentUser(mockRequest);
 
       expect(mockUserService.findById).toHaveBeenCalledWith('user-1');
       expect(result).toEqual(mockUser);
@@ -47,17 +46,13 @@ describe('UserController - Complete Coverage', () => {
 
       mockUserService.findAll.mockResolvedValue(mockUsers);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({});
 
       expect(mockUserService.findAll).toHaveBeenCalled();
       expect(result).toEqual(mockUsers);
     });
   });
-
-  describe('updateProfile', () => {
-    it('should update user profile', async () => {
-      const mockRequest = {
-        user: { id: 'user-1' },
+});
       };
 
       const updateDto = {

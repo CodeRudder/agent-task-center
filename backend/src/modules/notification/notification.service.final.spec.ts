@@ -1,6 +1,7 @@
 import { NotificationService } from './notification.service';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
+import { NotificationType } from './dto/notification.dto';
 
 describe('NotificationService - Final Push', () => {
   let service: NotificationService;
@@ -14,6 +15,7 @@ describe('NotificationService - Final Push', () => {
     update: jest.fn(),
     delete: jest.fn(),
     count: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   beforeEach(() => {
@@ -24,7 +26,8 @@ describe('NotificationService - Final Push', () => {
   describe('create', () => {
     it('should create a notification', async () => {
       const notificationData = {
-        userId: 'user-1',
+        recipientId: 'user-1',
+        type: NotificationType.TASK_CREATED as const,
         title: 'Test',
         content: 'Content',
       };
@@ -44,55 +47,48 @@ describe('NotificationService - Final Push', () => {
     });
   });
 
-  describe('findByUserId', () => {
+  describe('findAll', () => {
     it('should return user notifications', async () => {
-      const userId = 'user-1';
+      const queryDto = { page: 1, pageSize: 10 };
       const mockNotifications = [
-        { id: 'notif-1', userId, title: 'Test 1' },
-        { id: 'notif-2', userId, title: 'Test 2' },
+        { id: 'notif-1', recipientId: 'user-1', title: 'Test 1' },
+        { id: 'notif-2', recipientId: 'user-1', title: 'Test 2' },
       ];
 
-      mockRepository.find.mockResolvedValue(mockNotifications);
+      const queryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockNotifications),
+        getCount: jest.fn().mockResolvedValue(2),
+      };
 
-      const result = await service.findByUserId(userId);
+      mockRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
-      expect(result).toEqual(mockNotifications);
+      const result = await service.findAll('user-1', queryDto);
+
+      expect(result.items).toEqual(mockNotifications);
+      expect(result.total).toBe(2);
     });
   });
 
-  describe('markAsRead', () => {
-    it('should mark notification as read', async () => {
-      const notificationId = 'notif-1';
+  describe('findOne', () => {
+    it('should return single notification', async () => {
+      const mockNotification = {
+        id: 'notif-1',
+        recipientId: 'user-1',
+        title: 'Test',
+      };
 
-      mockRepository.update.mockResolvedValue({ affected: 1 });
+      mockRepository.findOne.mockResolvedValue(mockNotification);
 
-      await service.markAsRead(notificationId);
+      const result = await service.findOne('notif-1', 'user-1');
 
-      expect(mockRepository.update).toHaveBeenCalledWith(notificationId, { isRead: true });
+      expect(result).toEqual(mockNotification);
     });
   });
-
-  describe('markAllAsRead', () => {
-    it('should mark all user notifications as read', async () => {
-      const userId = 'user-1';
-
-      mockRepository.update.mockResolvedValue({ affected: 5 });
-
-      await service.markAllAsRead(userId);
-
-      expect(mockRepository.update).toHaveBeenCalled();
-    });
-  });
-
-  describe('getUnreadCount', () => {
-    it('should return unread count', async () => {
-      const userId = 'user-1';
-
-      mockRepository.count.mockResolvedValue(3);
-
-      const result = await service.getUnreadCount(userId);
-
-      expect(result).toBe(3);
-    });
+});
   });
 });

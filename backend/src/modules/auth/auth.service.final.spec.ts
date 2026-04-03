@@ -1,29 +1,37 @@
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
-import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { User } from '../user/entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 
 describe('AuthService - Final Push', () => {
   let service: AuthService;
+  let userRepository: Repository<User>;
+  let passwordResetTokenRepository: Repository<PasswordResetToken>;
   let jwtService: JwtService;
-  let userService: UserService;
+
+  const mockUserRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockPasswordResetTokenRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
 
   const mockJwtService = {
     sign: jest.fn(),
     verify: jest.fn(),
   };
 
-  const mockUserService = {
-    findById: jest.fn(),
-    findByEmail: jest.fn(),
-    create: jest.fn(),
-    validatePassword: jest.fn(),
-  };
-
   beforeEach(() => {
+    userRepository = mockUserRepository as any;
+    passwordResetTokenRepository = mockPasswordResetTokenRepository as any;
     jwtService = mockJwtService as any;
-    userService = mockUserService as any;
-    service = new AuthService(jwtService, userService);
+    service = new AuthService(userRepository, passwordResetTokenRepository, jwtService);
   });
 
   describe('login edge cases', () => {
@@ -33,7 +41,7 @@ describe('AuthService - Final Push', () => {
         password: 'password',
       };
 
-      mockUserService.findByEmail.mockResolvedValue(null);
+      mockUserRepository.findOne.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow();
     });
@@ -61,7 +69,7 @@ describe('AuthService - Final Push', () => {
         name: 'Test User',
       };
 
-      mockUserService.findByEmail.mockResolvedValue({ id: 'user-1' });
+      mockUserRepository.findOne.mockResolvedValue({ id: 'user-1' });
 
       await expect(service.register(registerDto)).rejects.toThrow();
     });

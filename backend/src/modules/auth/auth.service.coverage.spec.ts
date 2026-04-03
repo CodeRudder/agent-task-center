@@ -2,14 +2,22 @@ import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService - Additional Coverage', () => {
   let service: AuthService;
   let userRepository: Repository<User>;
+  let passwordResetTokenRepository: Repository<PasswordResetToken>;
   let jwtService: JwtService;
 
   const mockUserRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockPasswordResetTokenRepository = {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
@@ -22,8 +30,9 @@ describe('AuthService - Additional Coverage', () => {
 
   beforeEach(() => {
     userRepository = mockUserRepository as any;
+    passwordResetTokenRepository = mockPasswordResetTokenRepository as any;
     jwtService = mockJwtService as any;
-    service = new AuthService(userRepository, jwtService);
+    service = new AuthService(userRepository, passwordResetTokenRepository, jwtService);
   });
 
   describe('validateUser', () => {

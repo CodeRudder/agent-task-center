@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskModule } from './task.module';
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { TaskController } from './task.controller';
 
 describe('TaskModule', () => {

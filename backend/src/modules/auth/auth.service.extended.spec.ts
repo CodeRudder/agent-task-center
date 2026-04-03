@@ -15,6 +15,12 @@ describe('AuthService - Extended Coverage', () => {
     save: jest.fn(),
   };
 
+  const mockPasswordResetTokenRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
   const mockJwtService = {
     sign: jest.fn(),
     verify: jest.fn(),
@@ -23,7 +29,7 @@ describe('AuthService - Extended Coverage', () => {
   beforeEach(() => {
     userRepository = mockUserRepository as any;
     jwtService = mockJwtService as any;
-    service = new AuthService(userRepository, jwtService);
+    service = new AuthService(userRepository, mockPasswordResetTokenRepository as any, jwtService);
   });
 
   describe('validateUser', () => {

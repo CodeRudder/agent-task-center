@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskController } from './task.controller';
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { CreateTaskDto, UpdateTaskDto } from './dto/task.dto';
 import { TaskPriority, TaskStatus } from './entities/task.entity';
 
@@ -42,8 +42,8 @@ describe('TaskController', () => {
         title: 'Test Task',
         description: 'Test Description',
         priority: TaskPriority.MEDIUM,
-        assignedAgentId: 'agent-001',
-        dueDate: new Date(),
+        assigneeId: 'agent-001',
+        dueDate: new Date().toISOString(),
       };
 
       const mockRequest = {
@@ -131,11 +131,13 @@ describe('TaskController', () => {
         priority: TaskPriority.MEDIUM,
       };
 
+      const mockRequest = { user: { id: 'user-001' } } as any;
+
       mockTaskService.update.mockResolvedValue(expectedResult);
 
-      const result = await controller.update('task-001', updateTaskDto);
+      const result = await controller.update('task-001', updateTaskDto, mockRequest);
 
-      expect(mockTaskService.update).toHaveBeenCalledWith('task-001', updateTaskDto);
+      expect(mockTaskService.update).toHaveBeenCalledWith('task-001', updateTaskDto, 'user-001');
       expect(result).toEqual(expectedResult);
     });
   });

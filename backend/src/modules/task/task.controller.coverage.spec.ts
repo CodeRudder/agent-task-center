@@ -1,10 +1,12 @@
 import { TaskController } from './task.controller';
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
+import { CommentService } from '../comment/comment.service';
 import { TaskStatus, TaskPriority } from './entities/task.entity';
 
 describe('TaskController - Additional Coverage', () => {
   let controller: TaskController;
   let service: TaskService;
+  let commentService: CommentService;
 
   const mockTaskService = {
     create: jest.fn(),
@@ -15,9 +17,14 @@ describe('TaskController - Additional Coverage', () => {
     updateProgress: jest.fn(),
   };
 
+  const mockCommentService = {
+    findByTaskId: jest.fn(),
+  };
+
   beforeEach(() => {
     service = mockTaskService as any;
-    controller = new TaskController(service);
+    commentService = mockCommentService as any;
+    controller = new TaskController(service, commentService);
   });
 
   describe('create', () => {

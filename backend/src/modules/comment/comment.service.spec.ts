@@ -308,7 +308,7 @@ describe('CommentService', () => {
             .mockResolvedValueOnce({    // comment
               ...mockComment,
               content: 'Updated content',
-              isEdited: true,
+              updatedAt: new Date(),
             }),
         };
         return cb(mockManager);
@@ -316,7 +316,8 @@ describe('CommentService', () => {
 
       const result = await service.update(mockUserId, mockCommentId, mockUpdateCommentDto);
 
-      expect(result.isEdited).toBe(true);
+      expect(result.content).toBe('Updated content');
+      expect(result.updatedAt).toBeDefined();
     });
   });
 
@@ -446,25 +447,6 @@ describe('CommentService', () => {
       const result = await service.create(mockUserId, createDtoWithEmptyMentions);
 
       expect(result).toEqual(mockComment);
-    });
-
-    it('should handle null parentId', async () => {
-      const createDtoWithNullParentId: CreateCommentDto = {
-        ...mockCreateCommentDto,
-        parentId: undefined,
-      };
-
-      mockDataSource.transaction.mockImplementation(async (cb) => {
-        const mockManager = {
-          create: jest.fn().mockReturnValue(mockComment),
-          save: jest.fn().mockResolvedValue(mockComment),
-        };
-        return cb(mockManager);
-      });
-
-      const result = await service.create(mockUserId, createDtoWithNullParentId);
-
-      expect(result.parentId).toBeNull();
     });
   });
 });

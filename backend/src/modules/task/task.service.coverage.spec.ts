@@ -1,10 +1,13 @@
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { Task } from './entities/task.entity';
 import { Repository, DataSource } from 'typeorm';
+import { TaskStatusMachineService } from './services/task-status-machine.service';
 
 describe('TaskService - Additional Coverage', () => {
   let service: TaskService;
   let repository: Repository<Task>;
+  let statusHistoryRepository: Repository<any>;
+  let statusMachine: TaskStatusMachineService;
   let dataSource: DataSource;
 
   const mockRepository = {
@@ -18,35 +21,57 @@ describe('TaskService - Additional Coverage', () => {
     createQueryBuilder: jest.fn(),
   };
 
+  const mockStatusHistoryRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockStatusMachine = {
+    validateTransition: jest.fn(),
+    requireReason: jest.fn(),
+  };
+
   const mockDataSource = {
+    transaction: jest.fn(),
     createQueryRunner: jest.fn(),
   };
 
   beforeEach(() => {
     repository = mockRepository as any;
+    statusHistoryRepository = mockStatusHistoryRepository as any;
+    statusMachine = mockStatusMachine as any;
     dataSource = mockDataSource as any;
-    service = new TaskService(repository, dataSource);
+    service = new TaskService(repository, statusHistoryRepository, statusMachine, dataSource);
   });
 
   describe('findAll', () => {
-    it('should return all tasks', async () => {
+    it('should return all tasks with pagination', async () => {
       const mockTasks = [
-        { id: '1', title: 'Task 1', status: 'pending' },
-        { id: '2', title: 'Task 2', status: 'completed' },
+        { id: '1', title: 'Task 1', status: TaskStatus.TODO },
+        { id: '2', title: 'Task 2', status: TaskStatus.DONE },
       ];
 
-      mockRepository.find.mockResolvedValue(mockTasks);
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockTasks, 2]),
+      };
 
-      const result = await service.findAll();
+      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      expect(result).toEqual(mockTasks);
-      expect(mockRepository.find).toHaveBeenCalled();
+      const result = await service.findAll({ page: 1, pageSize: 10 });
+
+      expect(result.tasks).toEqual(mockTasks);
+      expect(result.pagination.total).toBe(2);
     });
   });
 
   describe('findOne', () => {
     it('should return a task by id', async () => {
-      const mockTask = { id: '1', title: 'Task 1' };
+      const mockTask = { id: '1', title: 'Task 1', status: TaskStatus.TODO };
 
       mockRepository.findOne.mockResolvedValue(mockTask);
 
@@ -68,49 +93,26 @@ describe('TaskService - Additional Coverage', () => {
   describe('update', () => {
     it('should update a task', async () => {
       const updateDto = { title: 'Updated Task' };
+      const mockTask = { id: '1', ...updateDto };
 
-      mockRepository.update.mockResolvedValue({ affected: 1 });
+      mockRepository.findOne.mockResolvedValue(mockTask);
+      mockRepository.save.mockResolvedValue(mockTask);
 
-      const result = await service.update('1', updateDto);
+      const result = await service.update('1', updateDto, 'user-1');
 
-      expect(mockRepository.update).toHaveBeenCalledWith('1', updateDto);
-      expect(result).toBe(true);
+      expect(result.title).toBe('Updated Task');
     });
   });
 
   describe('remove', () => {
-    it('should delete a task', async () => {
-      mockRepository.delete.mockResolvedValue({ affected: 1 });
+    it('should soft delete a task', async () => {
+      const mockTask = { id: '1', title: 'Task 1' };
+      mockRepository.findOne.mockResolvedValue(mockTask);
+      mockRepository.softDelete.mockResolvedValue({ affected: 1 });
 
       const result = await service.remove('1');
 
-      expect(mockRepository.delete).toHaveBeenCalledWith('1');
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('count', () => {
-    it('should return total task count', async () => {
-      mockRepository.count.mockResolvedValue(10);
-
-      const result = await service.count();
-
-      expect(result).toBe(10);
-    });
-  });
-
-  describe('findByAssignee', () => {
-    it('should return tasks for specific assignee', async () => {
-      const mockTasks = [
-        { id: '1', assignedTo: 'user-1' },
-        { id: '2', assignedTo: 'user-1' },
-      ];
-
-      mockRepository.find.mockResolvedValue(mockTasks);
-
-      const result = await service.findByAssignee('user-1');
-
-      expect(result).toEqual(mockTasks);
+      expect(mockRepository.softDelete).toHaveBeenCalledWith('1');
     });
   });
 });

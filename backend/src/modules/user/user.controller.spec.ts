@@ -20,7 +20,10 @@ describe('UserController', () => {
           useValue: mockUserService,
         },
       ],
-    }).compile();
+    })
+    .overrideGuard(require('../common/guards/permission.guard'))
+    .useValue({ canActivate: () => true })
+    .compile();
 
     controller = module.get<UserController>(UserController);
     service = module.get<UserService>(UserService);
@@ -76,7 +79,7 @@ describe('UserController', () => {
 
       mockUserService.findAll.mockResolvedValue(expectedResult);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({});
 
       expect(mockUserService.findAll).toHaveBeenCalled();
       expect(result).toEqual(expectedResult);

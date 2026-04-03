@@ -19,7 +19,7 @@ describe('TemplatesController', () => {
     defaultPriority: TaskPriority.HIGH,
     defaultTitle: 'Bug: {{description}}',
     defaultDescription: 'Steps to reproduce',
-    defaultMetadata: null,
+    defaultMetadata: {},
     tags: ['bug', 'urgent'],
     estimatedMinutes: 60,
     usageCount: 0,
@@ -28,7 +28,7 @@ describe('TemplatesController', () => {
     createdBy: null as any,
     createdAt: new Date(),
     updatedAt: new Date(),
-    deletedAt: null,
+    deletedAt: null as any,
   };
 
   const mockRequest = {
@@ -129,27 +129,26 @@ describe('TemplatesController', () => {
   describe('applyTemplate', () => {
     it('should apply template and create task', async () => {
       const applyDto = { title: 'Custom Title' };
-      const mockTask: Task = {
+      const mockTask: Partial<Task> = {
         id: '123e4567-e89b-12d3-a456-426614174002',
         title: 'Custom Title',
         description: '',
         status: 'todo' as any,
         priority: TaskPriority.HIGH,
         progress: 0,
-        dueDate: null,
+        dueDate: null as any,
         assigneeId: mockUserId,
-        assignee: null as any,
-        parentId: null,
+        parentId: null as any,
+        creatorId: mockUserId,
         metadata: { templateId: mockTemplateId },
         version: 1,
         templateId: mockTemplateId,
-        template: null as any,
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: null,
+        deletedAt: null as any,
       };
 
-      jest.spyOn(service, 'applyTemplate').mockResolvedValue(mockTask);
+      jest.spyOn(service, 'applyTemplate').mockResolvedValue(mockTask as Task);
 
       const result = await controller.applyTemplate(mockTemplateId, applyDto, mockRequest);
 

@@ -1,4 +1,4 @@
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { Task, TaskStatus, TaskPriority } from './entities/task.entity';
 import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';

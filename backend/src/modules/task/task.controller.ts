@@ -49,9 +49,20 @@ export class TaskController {
     @Body() createTaskDto: CreateTaskDto,
     @Request() req: any,
   ): Promise<{success: boolean; data: Task}> {
-    // JWT认证后req.user一定存在，直接使用req.user.id
-    const task = await this.taskService.create(createTaskDto, req.user.id);
-    return {success: true, data: task};
+    try {
+      // JWT认证后req.user一定存在，直接使用req.user.id
+      console.log('[TaskController] Creating task with DTO:', JSON.stringify(createTaskDto));
+      console.log('[TaskController] User from JWT:', req.user?.id);
+      
+      const task = await this.taskService.create(createTaskDto, req.user.id);
+      
+      console.log('[TaskController] Task created successfully:', task.id);
+      return {success: true, data: task};
+    } catch (error) {
+      console.error('[TaskController] Error creating task:', error);
+      console.error('[TaskController] Error stack:', error.stack);
+      throw error;
+    }
   }
 
   @Get()
@@ -161,12 +172,24 @@ export class TaskController {
     @Body() dto: UpdateTaskStatusDto,
     @Request() req: any,
   ): Promise<Task> {
-    return this.taskService.updateStatus(
-      id,
-      dto,
-      req.user.id,
-      req.user.type || "user",
-    );
+    try {
+      console.log('[TaskController] Updating task status:', id, 'to:', dto.status);
+      console.log('[TaskController] Update DTO:', JSON.stringify(dto));
+      
+      const result = await this.taskService.updateStatus(
+        id,
+        dto,
+        req.user.id,
+        req.user.type || "user",
+      );
+      
+      console.log('[TaskController] Task status updated successfully');
+      return result;
+    } catch (error) {
+      console.error('[TaskController] Error updating task status:', error);
+      console.error('[TaskController] Error stack:', error.stack);
+      throw error;
+    }
   }
 
   @Get(":id/status-histories")

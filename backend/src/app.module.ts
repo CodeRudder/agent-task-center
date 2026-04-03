@@ -28,6 +28,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { XssFilterMiddleware } from './common/middleware/xss-filter.middleware';
+import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
+import { LoggerModule } from './common/logger/logger.module';
 import { AppController } from './app.controller';
 
 // Config
@@ -72,6 +74,7 @@ import { appConfig, jwtConfig } from './config/app.config';
     ]),
 
     // Feature Modules
+    LoggerModule,
     AuthModule,
     UserModule,
     TaskModule,
@@ -112,7 +115,7 @@ import { appConfig, jwtConfig } from './config/app.config';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(XssFilterMiddleware)
+      .apply(XssFilterMiddleware, RequestLoggingMiddleware)
       .forRoutes('*');
   }
 }

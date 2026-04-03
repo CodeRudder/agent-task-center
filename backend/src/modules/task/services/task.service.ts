@@ -30,16 +30,30 @@ export class TaskService {
   ) {}
 
   async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
-    const task = this.taskRepository.create({
-      ...createTaskDto,
-      creatorId: userId,
-      assigneeId: createTaskDto.assigneeId || userId,
-      dueDate: createTaskDto.dueDate
-        ? new Date(createTaskDto.dueDate)
-        : undefined,
-    });
+    try {
+      console.log('[TaskService] Creating task with DTO:', JSON.stringify(createTaskDto));
+      console.log('[TaskService] Creator ID:', userId);
+      
+      const task = this.taskRepository.create({
+        ...createTaskDto,
+        creatorId: userId,
+        assigneeId: createTaskDto.assigneeId || userId,
+        dueDate: createTaskDto.dueDate
+          ? new Date(createTaskDto.dueDate)
+          : undefined,
+      });
 
-    return this.taskRepository.save(task);
+      console.log('[TaskService] Saving task to database...');
+      const result = await this.taskRepository.save(task);
+      console.log('[TaskService] Task saved successfully:', result.id);
+      
+      return result;
+    } catch (error) {
+      console.error('[TaskService] Error creating task:', error);
+      console.error('[TaskService] Error details:', error.message);
+      console.error('[TaskService] Error stack:', error.stack);
+      throw error;
+    }
   }
 
   async findAll(options: {

@@ -4,15 +4,20 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { ApiResponse } from '../interfaces/api-response.interface';
+import { LoggerService } from '../logger/logger.service';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  constructor(private readonly logger: LoggerService) {}
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
@@ -31,11 +36,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       message = exception.message;
+    }
 
-      // Log error in development
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Exception:', exception);
-      }
+    // 记录详细错误日志（所有环境）
+    if (exception instanceof Error) {
+      this.logger.logError(
+        exception,
+        request.requestId,
+        'HttpExceptionFilter',
+      );
+    } else {
+      this.logger.error(
+        `Unknown exception: ${exception}`,
+        '',
+        'HttpExceptionFilter',
+      );
     }
 
     const errorResponse: ApiResponse = {
@@ -44,6 +59,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
       timestamp: new Date().toISOString(),
       ...(errors && { errors }),
+      ...(request.requestId && { requestId: request.requestId }),
     };
 
     response.status(status).json(errorResponse);

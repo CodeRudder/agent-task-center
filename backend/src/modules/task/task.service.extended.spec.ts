@@ -1,4 +1,4 @@
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { Task } from './entities/task.entity';
 
 describe('TaskService - Extended Tests', () => {

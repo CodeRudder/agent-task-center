@@ -260,15 +260,17 @@ describe('AgentsService', () => {
       expect(result.status).toBe(AgentStatus.BUSY);
     });
 
-    it('should update agent metadata', async () => {
+    it('should update agent with valid fields only', async () => {
       const agentId = 'agent-uuid';
       const updateDto = {
-        metadata: { level: 'senior', experience_years: 5 },
+        name: 'Updated Agent Name',
+        description: 'Updated description',
       };
 
       const mockAgent = {
         id: agentId,
-        metadata: {},
+        name: 'Old Name',
+        description: 'Old description',
       };
 
       mockAgentRepository.findOne.mockResolvedValue(mockAgent);
@@ -276,7 +278,8 @@ describe('AgentsService', () => {
 
       const result = await service.update(agentId, updateDto);
 
-      expect(result.metadata).toEqual(updateDto.metadata);
+      expect(result.name).toEqual(updateDto.name);
+      expect(result.description).toEqual(updateDto.description);
     });
   });
 

@@ -1,6 +1,7 @@
 import { NotificationService } from './notification.service';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
+import { NotificationType } from './dto/notification.dto';
 
 describe('NotificationService - Additional Coverage', () => {
   let service: NotificationService;
@@ -13,6 +14,7 @@ describe('NotificationService - Additional Coverage', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     count: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   beforeEach(() => {
@@ -21,44 +23,52 @@ describe('NotificationService - Additional Coverage', () => {
   });
 
   describe('findAll', () => {
-    it('should return all notifications for user', async () => {
+    it('should return paginated notifications', async () => {
       const mockNotifications = [
-        { id: '1', userId: 'user-1', title: 'Notif 1' },
-        { id: '2', userId: 'user-1', title: 'Notif 2' },
+        { id: '1', recipientId: 'user-1', title: 'Notif 1' },
+        { id: '2', recipientId: 'user-1', title: 'Notif 2' },
       ];
 
-      mockRepository.find.mockResolvedValue(mockNotifications);
+      const queryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockNotifications),
+        getCount: jest.fn().mockResolvedValue(2),
+      };
 
-      const result = await service.getNotifications('user-1', 20);
+      mockRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
-      expect(result).toEqual(mockNotifications);
+      const result = await service.findAll('user-1', {});
+
+      expect(result.items).toEqual(mockNotifications);
+      expect(result.total).toBe(2);
     });
   });
 
-  describe('getUnreadCount', () => {
-    it('should return unread count', async () => {
-      mockRepository.count.mockResolvedValue(5);
+  describe('findOne', () => {
+    it('should return notification by id', async () => {
+      const mockNotification = {
+        id: 'notif-1',
+        recipientId: 'user-1',
+        title: 'Test',
+      };
 
-      const result = await service.getUnreadCount('user-1');
+      mockRepository.findOne.mockResolvedValue(mockNotification);
 
-      expect(result).toBe(5);
-    });
-  });
+      const result = await service.findOne('notif-1', 'user-1');
 
-  describe('markAsRead', () => {
-    it('should mark notification as read', async () => {
-      mockRepository.update.mockResolvedValue({ affected: 1 });
-
-      await service.markAsRead('user-1', 'notif-1');
-
-      expect(mockRepository.update).toHaveBeenCalled();
+      expect(result).toEqual(mockNotification);
     });
   });
 
   describe('create', () => {
     it('should create a notification', async () => {
       const notificationData = {
-        userId: 'user-1',
+        recipientId: 'user-1',
+        type: NotificationType.TASK_CREATED as const,
         title: 'Test',
         content: 'Content',
       };

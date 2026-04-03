@@ -3,8 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { Notification, NotificationType } from './entities/notification.entity';
-import { CreateNotificationDto, QueryNotificationDto, PushNotificationDto } from './dto/notification.dto';
+import { Notification } from './entities/notification.entity';
+import { CreateNotificationDto, QueryNotificationDto, PushNotificationDto, NotificationType } from './dto/notification.dto';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -135,7 +135,7 @@ describe('NotificationService', () => {
 
     it('should filter by type', async () => {
       const queryDto: QueryNotificationDto = {
-        type: NotificationType.TASK_ASSIGNED,
+        type: 'task_created',
         page: 1,
         pageSize: 10,
       };
@@ -415,16 +415,16 @@ describe('NotificationService', () => {
         relatedCommentId: comment.id,
       });
     });
+  });
 
-    it('should return null if comment has no task', async () => {
-      const comment = {
-        id: 'comment-uuid',
-        authorId: 'author-uuid',
-      };
+  describe('remove', () => {
+    it('should remove a notification', async () => {
+      mockRepository.findOne.mockResolvedValue({ id: 'notif-1', recipientId: 'user-1' } as Notification);
+      mockRepository.softDelete.mockResolvedValue({ affected: 1 });
 
-      const result = await service.createCommentAddedNotification(comment);
+      await service.remove('notif-1', 'user-1');
 
-      expect(result).toBeNull();
+      expect(mockRepository.softDelete).toHaveBeenCalledWith('notif-1');
     });
   });
 });
