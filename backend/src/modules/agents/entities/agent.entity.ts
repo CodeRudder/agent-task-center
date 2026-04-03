@@ -66,7 +66,7 @@ export class Agent {
 
   // apiTokenHash removed - column does not exist in database
 
-  @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
+  @Column({ type: 'timestamp', name: 'token_expires_at', nullable: true })
   apiTokenExpiresAt: Date | null;
 
   @Column({ type: 'jsonb', default: {} })
