@@ -102,16 +102,17 @@ export class CommentService {
         }
 
         // 3.3 发送评论回复通知（通知父评论作者）
-        if (fullComment.parentId) {
-          // ADR-002: 使用显式查询获取父评论
-          const parentComment = await this.commentRepository.findOne({ where: { id: fullComment.parentId } });
-          if (parentComment) {
-            await this.notificationService.createCommentReplyNotification(
-              fullComment,
-              parentComment,
-            );
-          }
-        }
+        // NOTE: parentId feature暂时禁用（数据库表缺少parent_id列）
+        // if (fullComment.parentId) {
+        //   // ADR-002: 使用显式查询获取父评论
+        //   const parentComment = await this.commentRepository.findOne({ where: { id: fullComment.parentId } });
+        //   if (parentComment) {
+        //     await this.notificationService.createCommentReplyNotification(
+        //       fullComment,
+        //       parentComment,
+        //     );
+        //   }
+        // }
       }
     } catch (error) {
       // 通知发送失败不影响评论创建，只记录日志
@@ -126,7 +127,7 @@ export class CommentService {
     const skip = (page - 1) * pageSize;
 
     const [comments, total] = await this.commentRepository.findAndCount({
-      where: { taskId, parentId: IsNull() }, // 只查询顶级评论
+      where: { taskId }, // NOTE: 移除parentId条件（数据库表缺少parent_id列）
       // ADR-002: 移除关联查询
       order: { createdAt: 'DESC' },
       skip,
@@ -181,7 +182,8 @@ export class CommentService {
 
       // 2. 更新评论
       comment.content = updateCommentDto.content;
-      comment.isEdited = true;
+      // NOTE: isEdited feature暂时禁用（数据库表缺少is_edited列）
+      // comment.isEdited = true;
       await manager.save(comment);
 
       return comment;

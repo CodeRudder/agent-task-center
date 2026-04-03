@@ -33,26 +33,6 @@ export class Comment {
   @Column({ type: 'text' })
   content: string;
 
-  // 新增字段：标记评论是否被编辑
-  @Column({ name: 'is_edited', type: 'boolean', default: false })
-  isEdited: boolean;
-
-  // 新增字段：父评论ID（支持评论回复）
-  @Column({ name: 'parent_id', type: 'uuid', nullable: true })
-  parentId: string | null;
-
-  // ADR-002: 移除关联装饰器，使用显式JOIN查询
-  // parent: Comment;
-
-  // ADR-002: 移除关联装饰器，使用显式JOIN查询
-  // replies: Comment[];
-
-  // ADR-002: 移除关联装饰器，使用显式JOIN查询
-  // mentions: CommentMention[];
-
-  // ADR-002: 移除关联装饰器，使用显式JOIN查询
-  // histories: CommentHistory[];
-
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 
