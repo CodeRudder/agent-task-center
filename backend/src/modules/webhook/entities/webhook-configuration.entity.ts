@@ -4,12 +4,8 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Project } from '../../project/entities/project.entity';
 
 @Entity('webhook_configurations')
 @Index(['projectId'])
@@ -50,14 +46,6 @@ export class WebhookConfiguration {
 
   @Column({ name: 'created_by' })
   createdBy: string;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  creator: User;
-
-  @ManyToOne(() => Project)
-  @JoinColumn({ name: 'project_id' })
-  project: Project;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

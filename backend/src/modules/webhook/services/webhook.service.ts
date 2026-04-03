@@ -71,7 +71,6 @@ export class WebhookService {
   async findOne(id: string): Promise<WebhookConfiguration> {
     const webhook = await this.webhookRepository.findOne({
       where: { id },
-      relations: ['project', 'creator'],
     });
 
     if (!webhook) {
@@ -191,7 +190,6 @@ export class WebhookService {
     // Find all active webhooks that listen to this event type
     const webhooks = await this.webhookRepository.find({
       where: { isActive: true },
-      relations: ['project'],
     });
 
     for (const webhook of webhooks) {
