@@ -46,6 +46,46 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
+      exceptionFactory: (errors) => {
+        const messages = errors.map(error => {
+          // 自定义中文错误消息
+          const constraints = error.constraints;
+          if (!constraints) return error.toString();
+
+          // 将class-validator的英文错误消息转换为中文
+          const chineseMessages: Record<string, string> = {
+            'isEmail': '邮箱格式不正确',
+            'isString': '必须是字符串',
+            'min': '值太小',
+            'max': '值太大',
+            'minLength': '密码长度至少8位',
+            'maxLength': '密码长度不能超过20位',
+            'isNotEmpty': '字段不能为空',
+            'isDefined': '字段是必填的',
+            'matches': '格式不正确',
+            'isBoolean': '必须是布尔值',
+            'isNumber': '必须是数字',
+            'isUUID': '必须是有效的UUID',
+            'isOptional': '字段是可选的',
+            'isIn': '值不在允许范围内',
+          };
+
+          // 将constraints对象的值转换为中文
+          const translatedConstraints: string[] = [];
+          for (const [key, value] of Object.entries(constraints)) {
+            // 检查是否有对应的中文消息
+            const chineseMessage = chineseMessages[key] || value as string;
+            translatedConstraints.push(chineseMessage);
+          }
+
+          return translatedConstraints.join(', ');
+        });
+
+        // 创建自定义错误
+        const error = new Error(messages.join('; '));
+        (error as any).status = 400;
+        return error;
+      },
     }),
   );
 
