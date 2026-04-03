@@ -54,7 +54,6 @@ export class TaskService {
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder("task")
-      .leftJoinAndSelect("task.assignee", "assignee")
       .where("task.deletedAt IS NULL");
 
     if (status) {
@@ -95,8 +94,6 @@ export class TaskService {
   async findOne(id: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      // ADR-002: 移除statusHistories关联查询
-      relations: ["assignee", "dependencies"],
     });
 
     if (!task) {
