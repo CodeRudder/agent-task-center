@@ -42,7 +42,7 @@ export class ApiTokenService {
     agent.apiToken = apiToken;
     // apiTokenHash removed - column does not exist in database
     agent.apiTokenExpiresAt = null; // 不使用过期时间
-    agent.tokenCreatedAt = new Date(); // 记录token创建时间
+    // tokenCreatedAt removed - column does not exist in database
 
     await this.agentRepository.save(agent);
 
@@ -75,9 +75,8 @@ export class ApiTokenService {
     }
 
     // 更新最后调用时间（同时更新两个字段以保持兼容）
-    const now = new Date();
-    agent.lastApiAccessAt = now;
-    agent.lastApiCallAt = now;
+    // lastApiAccessAt removed - column does not exist in database
+    // lastApiCallAt removed - column does not exist in database
     await this.agentRepository.save(agent);
 
     this.logger.log(`Successfully validated API token for agent ${agent.id}`);
@@ -104,8 +103,8 @@ export class ApiTokenService {
     agent.apiToken = null;
     // apiTokenHash removed - column does not exist in database
     agent.apiTokenExpiresAt = null;
-    agent.tokenCreatedAt = null;
-    agent.lastApiCallAt = null;
+    // tokenCreatedAt removed - column does not exist in database
+    // lastApiCallAt removed - column does not exist in database
 
     await this.agentRepository.save(agent);
 

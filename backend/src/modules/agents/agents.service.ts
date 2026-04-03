@@ -23,7 +23,7 @@ export class AgentsService {
     const randomBytes = Buffer.from(Math.random().toString()).toString('base64').substring(0, 56);
     const agent = this.agentRepository.create({
       ...createAgentDto,
-      createdBy: userId,
+      // createdBy removed - column does not exist in database
       apiToken: `at_${randomBytes}`,
     });
 

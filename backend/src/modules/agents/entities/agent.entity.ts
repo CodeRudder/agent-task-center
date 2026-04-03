@@ -69,20 +69,11 @@ export class Agent {
   @Column({ type: 'timestamp', name: 'token_expires_at', nullable: true })
   apiTokenExpiresAt: Date | null;
 
-  @Column({ type: 'jsonb', default: {} })
-  metadata: Record<string, any>;
-
-  @Column({ name: 'created_by', type: 'uuid', nullable: true })
-  createdBy: string;
-
-  @Column({ type: 'timestamp', name: 'token_created_at', nullable: true })
-  tokenCreatedAt: Date | null;
-
-  @Column({ type: 'timestamp', name: 'last_api_call_at', nullable: true })
-  lastApiCallAt: Date | null;
-
-  @Column({ type: 'timestamp', name: 'last_api_access_at', nullable: true })
-  lastApiAccessAt: Date | null;
+  // metadata removed - column does not exist in database
+  // createdBy removed - column does not exist in database
+  // tokenCreatedAt removed - column does not exist in database
+  // lastApiCallAt removed - column does not exist in database
+  // lastApiAccessAt removed - column does not exist in database
 
   // V5: Agent角色（用于权限控制）
   @Column({
