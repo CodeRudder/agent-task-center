@@ -22,27 +22,6 @@ export class ReportsController {
     return this.reportsService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get report details' })
-  @ApiResponse({ status: 200, description: 'Report details retrieved successfully' })
-  async findOne(@Param('id') id: string) {
-    return this.reportsService.findOne(id);
-  }
-
-  @Post('tasks')
-  @ApiOperation({ summary: 'Generate task report' })
-  @ApiResponse({ status: 201, description: 'Task report generated successfully' })
-  async generateTaskReport(@Body() body: any) {
-    return this.reportsService.generateTaskReport(body);
-  }
-
-  @Post('projects')
-  @ApiOperation({ summary: 'Generate project report' })
-  @ApiResponse({ status: 201, description: 'Project report generated successfully' })
-  async generateProjectReport(@Body() body: any) {
-    return this.reportsService.generateProjectReport(body);
-  }
-
   @Get('trend')
   @ApiOperation({ summary: 'Get trend analysis' })
   @ApiResponse({ status: 200, description: 'Trend analysis retrieved successfully' })
@@ -76,6 +55,27 @@ export class ReportsController {
   @ApiQuery({ name: 'type', required: false })
   async exportReport(@Query() query: ExportQueryDto) {
     return this.reportsService.exportReport(query.format || 'csv', query.type);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get report details' })
+  @ApiResponse({ status, 200, description: 'Report details retrieved successfully' })
+  async findOne(@Param('id') id: string) {
+    return this.reportsService.findOne(id);
+  }
+
+  @Post('tasks')
+  @ApiOperation({ summary: 'Generate task report' })
+  @ApiResponse({ status: 201, description: 'Task report generated successfully' })
+  async generateTaskReport(@Body() body: any) {
+    return this.reportsService.generateTaskReport(body);
+  }
+
+  @Post('projects')
+  @ApiOperation({ summary: 'Generate project report' })
+  @ApiResponse({ status: 201, description: 'Project report generated successfully' })
+  async generateProjectReport(@Body() body: any) {
+    return this.reportsService.generateProjectReport(body);
   }
 
   @Post('custom')
