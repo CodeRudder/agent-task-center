@@ -40,7 +40,7 @@ export class ApiTokenService {
 
     // 更新Agent记录
     agent.apiToken = apiToken;
-    agent.apiTokenHash = null; // 不再使用hash
+    // apiTokenHash removed - column does not exist in database
     agent.apiTokenExpiresAt = null; // 不使用过期时间
     agent.tokenCreatedAt = new Date(); // 记录token创建时间
 
@@ -102,7 +102,7 @@ export class ApiTokenService {
     }
 
     agent.apiToken = null;
-    agent.apiTokenHash = null;
+    // apiTokenHash removed - column does not exist in database
     agent.apiTokenExpiresAt = null;
     agent.tokenCreatedAt = null;
     agent.lastApiCallAt = null;

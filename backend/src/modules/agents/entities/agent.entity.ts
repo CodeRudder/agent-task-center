@@ -64,8 +64,7 @@ export class Agent {
   @Index()
   apiToken!: string | null;
 
-  @Column({ type: 'varchar', length: 255, unique: true, name: 'api_token_hash', nullable: true })
-  apiTokenHash!: string | null;
+  // apiTokenHash removed - column does not exist in database
 
   @Column({ type: 'timestamp', name: 'api_token_expires_at', nullable: true })
   apiTokenExpiresAt: Date | null;
