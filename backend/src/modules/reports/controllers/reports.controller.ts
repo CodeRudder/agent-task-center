@@ -59,7 +59,7 @@ export class ReportsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get report details' })
-  @ApiResponse({ status, 200, description: 'Report details retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Report details retrieved successfully' })
   async findOne(@Param('id') id: string) {
     return this.reportsService.findOne(id);
   }
