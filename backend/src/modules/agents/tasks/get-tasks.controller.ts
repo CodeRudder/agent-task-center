@@ -41,11 +41,11 @@ export class GetTasksController {
 
     return {
       success: true,
-      data: result,
+      data: result.tasks,
       pagination: {
         page: Number(page),
         pageSize: Number(pageSize),
-        total: result.total || 0,
+        total: result.tasks.length,
       },
       timestamp: new Date().toISOString(),
     };
