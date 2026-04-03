@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType, NestModule } from '@nestjs/common';
+import { ValidationPipe, VersioningType, NestModule, BadRequestException } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
@@ -81,10 +81,8 @@ async function bootstrap() {
           return translatedConstraints.join(', ');
         });
 
-        // 创建自定义错误
-        const error = new Error(messages.join('; '));
-        (error as any).status = 400;
-        return error;
+        // 使用BadRequestException而不是普通Error
+        return new BadRequestException(messages.join('; '));
       },
     }),
   );
