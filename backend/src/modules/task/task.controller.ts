@@ -43,6 +43,7 @@ export class TaskController {
 
   @Post()
   @ApiOperation({ summary: "Create a new task" })
+  @HttpCode(201)
   async create(
     @Body() createTaskDto: CreateTaskDto,
     @Request() req: any,
