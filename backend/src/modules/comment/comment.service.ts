@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, IsNull } from 'typeorm';
 import { Comment } from './entities/comment.entity';
@@ -29,6 +29,11 @@ export class CommentService {
   // 创建评论
   async create(userId: string, createCommentDto: CreateCommentDto): Promise<Comment> {
     const { taskId, content, parentId, mentions, notifyUsers } = createCommentDto;
+
+    // 验证content字段存在且不为空
+    if (!content || content.trim().length === 0) {
+      throw new BadRequestException('评论内容不能为空');
+    }
 
     // 自动解析@提及，合并前端传递的mentions
     const parsedMentions = this.parseMentions(content);

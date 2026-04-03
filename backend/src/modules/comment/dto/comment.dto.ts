@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsNotEmpty, IsOptional, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsNotEmpty, IsOptional, IsArray, MaxLength, IsDefined } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCommentDto {
@@ -8,6 +8,7 @@ export class CreateCommentDto {
   taskId: string;
 
   @ApiProperty({ example: 'This task needs more details', minLength: 1, maxLength: 2000 })
+  @IsDefined({ message: '评论内容不能为空' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000, { message: '评论内容最多2000个字符' })
