@@ -46,9 +46,10 @@ export class TaskController {
   async create(
     @Body() createTaskDto: CreateTaskDto,
     @Request() req: any,
-  ): Promise<Task> {
+  ): Promise<{success: boolean; data: Task}> {
     // JWT认证后req.user一定存在，直接使用req.user.id
-    return this.taskService.create(createTaskDto, req.user.id);
+    const task = await this.taskService.create(createTaskDto, req.user.id);
+    return {success: true, data: task};
   }
 
   @Get()
