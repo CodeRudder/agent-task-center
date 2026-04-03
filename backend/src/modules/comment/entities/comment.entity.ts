@@ -12,8 +12,6 @@ import {
 @Index(['authorId'])
 @Index(['taskId'])
 @Index(['createdAt'])
-@Index(['parentId'])
-@Index(['isEdited'])
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
