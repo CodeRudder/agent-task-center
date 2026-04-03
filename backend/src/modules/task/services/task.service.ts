@@ -292,12 +292,12 @@ export class TaskService {
     page: number = 1,
     limit: number = 20,
   ) {
+    // ADR-002 v2.1: 移除relations选项，不加载关联的changer对象
     const [items, total] = await this.statusHistoryRepository.findAndCount({
       where: { taskId },
       order: { changedAt: "DESC" },
       skip: (page - 1) * limit,
       take: limit,
-      relations: ["changer"],
     });
 
     return {
@@ -347,7 +347,6 @@ export class TaskService {
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
-      .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.deletedAt IS NULL');
 
     // 增量查询：只返回指定时间后更新的任务

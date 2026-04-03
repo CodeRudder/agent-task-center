@@ -195,12 +195,17 @@ export class RoleService {
   }
 
   async getUserRoles(userId: string): Promise<Role[]> {
-    const userRoles = await this.userRoleRepository.find({
-      where: { userId },
-      relations: ['role'],
-    });
+    // ADR-002 v2.1: 使用显式JOIN查询，移除relations选项
+    const userRoles = await this.userRoleRepository
+      .createQueryBuilder('userRole')
+      .leftJoin('userRole.role', 'role')
+      .select(['userRole.id', 'userRole.userId', 'userRole.roleId', 'role.id', 'role.name', 'role.description', 'role.permissions'])
+      .where('userRole.userId = :userId', { userId })
+      .getMany();
 
-    return userRoles.map(userRole => userRole.role);
+    return userRoles
+      .filter(userRole => userRole.role)
+      .map(userRole => userRole.role);
   }
 
   async getPermissions(): Promise<Record<string, string[]>> {
