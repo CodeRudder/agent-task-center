@@ -390,6 +390,36 @@ export class AuthService {
    */
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
     try {
+      // 手动验证token和newPassword，提供中文错误消息
+      if (!token || typeof token !== 'string') {
+        throw new BadRequestException('Token是必填字段');
+      }
+
+      if (!newPassword || typeof newPassword !== 'string') {
+        throw new BadRequestException('新密码是必填字段');
+      }
+
+      // 验证密码长度和复杂度
+      if (newPassword.length < 8) {
+        throw new BadRequestException('密码长度至少8位');
+      }
+
+      if (newPassword.length > 20) {
+        throw new BadRequestException('密码长度不能超过20位');
+      }
+
+      if (!/[a-z]/.test(newPassword)) {
+        throw new BadRequestException('密码必须包含小写字母');
+      }
+
+      if (!/[A-Z]/.test(newPassword)) {
+        throw new BadRequestException('密码必须包含大写字母');
+      }
+
+      if (!/\d/.test(newPassword)) {
+        throw new BadRequestException('密码必须包含数字');
+      }
+
       // 1. 查找 token
       const passwordResetToken = await this.passwordResetTokenRepository.findOne({
         where: { token },
@@ -397,20 +427,20 @@ export class AuthService {
 
       if (!passwordResetToken) {
         this.logger.warn(`Reset password failed: token not found`);
-        throw new BadRequestException('无效的重置链接');
+        throw new BadRequestException('Token无效');
       }
 
       // 2. 检查 token 是否已使用
       if (passwordResetToken.isUsed) {
         this.logger.warn(`Reset password failed: token already used`);
-        throw new BadRequestException('该重置链接已被使用');
+        throw new BadRequestException('Token已使用');
       }
 
       // 3. 检查 token 是否过期
       const now = new Date();
       if (passwordResetToken.expiresAt < now) {
         this.logger.warn(`Reset password failed: token expired`);
-        throw new BadRequestException('重置链接已过期，请重新申请');
+        throw new BadRequestException('Token已过期');
       }
 
       // 4. 查找用户

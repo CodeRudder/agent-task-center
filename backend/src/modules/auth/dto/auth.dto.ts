@@ -64,13 +64,11 @@ export class ForgotPasswordDto {
 export class ResetPasswordDto {
   @ApiProperty({ example: 'e5ef11d62ed0fee321242acb0635d5ddd4a8a2f9410e15ea1f1eec68f612a6cc' })
   @IsString()
-  @MinLength(64)
-  @MaxLength(128)
   token: string;
 
   @ApiProperty({ example: 'newPassword123' })
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
   @MaxLength(20)
   newPassword: string;
 }
