@@ -11,6 +11,7 @@ import {
   Query,
   ParseUUIDPipe,
   HttpCode,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -50,7 +51,6 @@ export class TaskController {
     @Request() req: any,
   ): Promise<{success: boolean; data: Task}> {
     try {
-      // JWT认证后req.user一定存在，直接使用req.user.id
       console.log('[TaskController] Creating task with DTO:', JSON.stringify(createTaskDto));
       console.log('[TaskController] User from JWT:', req.user?.id);
       
