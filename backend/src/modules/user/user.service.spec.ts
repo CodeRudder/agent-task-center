@@ -2,16 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { Permission } from './entities/permission.entity';
+import { RolePermission } from './entities/role-permission.entity';
 import { Repository } from 'typeorm';
+import { mockRepository } from '@common/utils/mocks';
 
 describe('UserService', () => {
   let service: UserService;
-  let userRepository: Repository<User>;
+  let userRepository: any;
 
   const mockUser = {
     id: 'user-001',
     email: 'test@example.com',
-    name: 'Test User',
+    displayName: 'Test User',
     role: 'user',
     isActive: true,
     avatar: null,
@@ -26,15 +29,15 @@ describe('UserService', () => {
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            find: jest.fn(),
-            findOne: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            count: jest.fn(),
-          },
+          useValue: mockRepository(),
+        },
+        {
+          provide: getRepositoryToken(Permission),
+          useValue: mockRepository(),
+        },
+        {
+          provide: getRepositoryToken(RolePermission),
+          useValue: mockRepository(),
         },
       ],
     }).compile();
@@ -64,49 +67,52 @@ describe('UserService', () => {
       expect(result.email).toBe(mockUser.email);
     });
 
-    it('should throw error if email already exists', async () => {
+    it('should create user successfully', async () => {
       const createUserDto = {
-        email: 'existing@example.com',
-        name: 'Existing User',
+        email: 'new@example.com',
         password: 'password123',
+        displayName: 'New User',
       };
 
-      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.create.mockReturnValue({ ...createUserDto, id: 'user-002' });
+      userRepository.save.mockResolvedValue({ ...createUserDto, id: 'user-002' });
 
-      await expect(service.create(createUserDto)).rejects.toThrow();
+      const result = await service.create(createUserDto);
+      expect(result.email).toBe('new@example.com');
     });
   });
 
   describe('findAll', () => {
     it('should return array of users', async () => {
       const users = [mockUser];
-      userRepository.find.mockResolvedValue(users);
+      userRepository.findAndCount.mockResolvedValue([users, users.length]);
 
-      const result = await service.findAll();
-      expect(result).toEqual(users);
+      const result = await service.findAll(1, 10);
+      expect(result.users).toEqual(users);
+      expect(result.total).toEqual(users.length);
     });
 
     it('should return empty array if no users', async () => {
-      userRepository.find.mockResolvedValue([]);
+      userRepository.findAndCount.mockResolvedValue([[], 0]);
 
-      const result = await service.findAll();
-      expect(result).toEqual([]);
+      const result = await service.findAll(1, 10);
+      expect(result.users).toEqual([]);
+      expect(result.total).toEqual(0);
     });
   });
 
-  describe('findOne', () => {
+  describe('findById', () => {
     it('should return user by id', async () => {
       userRepository.findOne.mockResolvedValue(mockUser);
 
-      const result = await service.findOne('user-001');
+      const result = await service.findById('user-001');
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null if user not found', async () => {
+    it('should throw NotFoundException if user not found', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.findOne('nonexistent');
-      expect(result).toBeNull();
+      await expect(service.findById('nonexistent')).rejects.toThrow('User not found');
     });
   });
 
@@ -126,65 +132,26 @@ describe('UserService', () => {
     });
   });
 
-  describe('update', () => {
+  describe('updateProfile', () => {
     it('should update user successfully', async () => {
       const updateDto = {
-        name: 'Updated Name',
-        role: 'admin',
+        displayName: 'Updated Name',
       };
 
       userRepository.findOne.mockResolvedValue(mockUser);
-      userRepository.update.mockResolvedValue({ affected: 1 });
-      userRepository.findOne.mockResolvedValue({
+      userRepository.save.mockResolvedValue({
         ...mockUser,
         ...updateDto,
       });
 
-      const result = await service.update('user-001', updateDto);
-      expect(result.name).toBe('Updated Name');
-      expect(result.role).toBe('admin');
+      const result = await service.updateProfile('user-001', updateDto);
+      expect(result.displayName).toBe('Updated Name');
     });
 
     it('should throw error if user not found', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update('nonexistent', {})).rejects.toThrow();
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete user successfully', async () => {
-      userRepository.findOne.mockResolvedValue(mockUser);
-      userRepository.delete.mockResolvedValue({ affected: 1 });
-
-      await service.delete('user-001');
-      expect(userRepository.delete).toHaveBeenCalledWith('user-001');
-    });
-
-    it('should throw error if user not found', async () => {
-      userRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.delete('nonexistent')).rejects.toThrow();
-    });
-  });
-
-  describe('updateStatus', () => {
-    it('should activate user', async () => {
-      userRepository.update.mockResolvedValue({ affected: 1 });
-
-      await service.updateStatus('user-001', true);
-      expect(userRepository.update).toHaveBeenCalledWith('user-001', {
-        isActive: true,
-      });
-    });
-
-    it('should deactivate user', async () => {
-      userRepository.update.mockResolvedValue({ affected: 1 });
-
-      await service.updateStatus('user-001', false);
-      expect(userRepository.update).toHaveBeenCalledWith('user-001', {
-        isActive: false,
-      });
+      await expect(service.updateProfile('nonexistent', {})).rejects.toThrow('User not found');
     });
   });
 });

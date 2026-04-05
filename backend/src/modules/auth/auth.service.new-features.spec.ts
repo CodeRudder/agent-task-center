@@ -4,7 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UnauthorizedException } from '@nestjs/common';
 import { User } from '../user/entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { mockRepository, MockDataSource, mockJwtService } from '@common/utils/mocks';
 
 describe('AuthService - New Features', () => {
   let service: AuthService;
@@ -28,18 +31,19 @@ describe('AuthService - New Features', () => {
         AuthService,
         {
           provide: getRepositoryToken(User),
-          useValue: {
-            findOne: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-          },
+          useValue: mockRepository(),
+        },
+        {
+          provide: getRepositoryToken(PasswordResetToken),
+          useValue: mockRepository(),
+        },
+        {
+          provide: DataSource,
+          useValue: MockDataSource,
         },
         {
           provide: JwtService,
-          useValue: {
-            sign: jest.fn().mockReturnValue('access-token'),
-            verify: jest.fn(),
-          },
+          useValue: mockJwtService(),
         },
       ],
     }).compile();

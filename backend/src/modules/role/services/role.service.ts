@@ -137,12 +137,12 @@ export class RoleService {
     return this.roleRepository.save(role);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
     const role = await this.findOne(id);
 
     // Check if trying to delete system role
     if (role.isSystem) {
-      throw new ForbiddenException('Cannot delete system role');
+      throw new ForbiddenException('不能删除系统默认角色');
     }
 
     // Check if role is assigned to any users
@@ -155,6 +155,11 @@ export class RoleService {
     }
 
     await this.roleRepository.remove(role);
+    
+    return {
+      success: true,
+      message: '角色删除成功'
+    };
   }
 
   async assignToUsers(roleId: string, assignRoleDto: AssignRoleDto): Promise<{ assignedCount: number }> {

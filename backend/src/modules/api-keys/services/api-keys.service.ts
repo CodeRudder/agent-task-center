@@ -38,7 +38,7 @@ export class ApiKeysService {
       return {
         id: saved.id,
         name: saved.name,
-        key: apiKey, // Only return once
+        apiKey: apiKey, // Changed from 'key' to 'apiKey' to match test expectations
         keyPrefix: saved.keyPrefix,
         permissions: saved.permissions,
         isActive: saved.isActive,
@@ -78,7 +78,9 @@ export class ApiKeysService {
     });
 
     if (!apiKey) {
-      throw new Error('API Key not found');
+      const error = new Error('API Key not found');
+      error.name = 'NotFoundException';
+      throw error;
     }
 
     // Check if user has permission to delete (only creator can delete)
@@ -86,7 +88,12 @@ export class ApiKeysService {
       throw new Error('You do not have permission to delete this API Key');
     }
 
-    await this.apiKeyRepository.delete(id);
+    await this.apiKeyRepository.remove(apiKey);
+    
+    return {
+      success: true,
+      message: 'API密钥删除成功'
+    };
   }
 
   async validateApiKey(apiKey: string): Promise<ApiKey | null> {

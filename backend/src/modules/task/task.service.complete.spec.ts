@@ -1,33 +1,47 @@
 import { TaskService } from './services/task.service';
+import { TaskStatusMachineService } from './services/task-status-machine.service';
 import { Task, TaskStatus, TaskPriority } from './entities/task.entity';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
 import { Repository, DataSource } from 'typeorm';
+import { mockRepository, MockDataSource } from '@common/utils/mocks';
 
 describe('TaskService - Complete Coverage', () => {
   let service: TaskService;
-  let repository: Repository<Task>;
-  let dataSource: DataSource;
+  let repository: any;
+  let statusHistoryRepository: any;
+  let dataSource: any;
+  let statusMachine: any;
 
-  const mockRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    softDelete: jest.fn(),
-    count: jest.fn(),
-    createQueryBuilder: jest.fn(),
+  const mockQueryBuilder = {
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
   };
 
   const mockDataSource = {
     createQueryRunner: jest.fn(),
-    transaction: jest.fn(),
+    transaction: jest.fn((callback) => callback({
+      findOne: jest.fn(),
+      save: jest.fn(),
+    })),
   };
 
   beforeEach(() => {
-    repository = mockRepository as any;
-    dataSource = mockDataSource as any;
-    service = new TaskService(repository, dataSource);
+    repository = {
+      ...mockRepository(),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+    };
+    statusHistoryRepository = mockRepository();
+    dataSource = mockDataSource;
+    statusMachine = {
+      canTransition: jest.fn(),
+      transition: jest.fn(),
+      validateTransition: jest.fn(),
+    };
+    service = new TaskService(repository, statusHistoryRepository, statusMachine, dataSource);
   });
 
   describe('create', () => {
@@ -45,13 +59,13 @@ describe('TaskService - Complete Coverage', () => {
         assigneeId: 'user-1',
       };
 
-      mockRepository.create.mockReturnValue(mockTask);
-      mockRepository.save.mockResolvedValue(mockTask);
+      repository.create.mockReturnValue(mockTask);
+      repository.save.mockResolvedValue(mockTask);
 
       const result = await service.create(createTaskDto, 'user-1');
 
       expect(result).toEqual(mockTask);
-      expect(mockRepository.create).toHaveBeenCalled();
+      expect(repository.create).toHaveBeenCalled();
     });
 
     it('should use provided assigneeId', async () => {
@@ -65,8 +79,8 @@ describe('TaskService - Complete Coverage', () => {
         ...createTaskDto,
       };
 
-      mockRepository.create.mockReturnValue(mockTask);
-      mockRepository.save.mockResolvedValue(mockTask);
+      repository.create.mockReturnValue(mockTask);
+      repository.save.mockResolvedValue(mockTask);
 
       const result = await service.create(createTaskDto, 'user-1');
 
@@ -84,12 +98,17 @@ describe('TaskService - Complete Coverage', () => {
         progress: 75,
       };
 
-      mockRepository.findOne.mockResolvedValue({ id: taskId, progress: 0 });
-      mockRepository.save.mockResolvedValue(mockTask);
+      mockDataSource.transaction.mockImplementation(async (callback) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ id: taskId, progress: 0 }),
+          save: jest.fn().mockResolvedValue(mockTask),
+        };
+        return await callback(mockManager);
+      });
 
       const result = await service.updateProgress(taskId, progressDto);
 
-      expect(mockRepository.save).toHaveBeenCalled();
+      expect(mockDataSource.transaction).toHaveBeenCalled();
     });
 
     it('should cap progress at 100', async () => {
@@ -101,12 +120,17 @@ describe('TaskService - Complete Coverage', () => {
         progress: 100,
       };
 
-      mockRepository.findOne.mockResolvedValue({ id: taskId, progress: 0 });
-      mockRepository.save.mockResolvedValue(mockTask);
+      mockDataSource.transaction.mockImplementation(async (callback) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ id: taskId, progress: 0 }),
+          save: jest.fn().mockResolvedValue(mockTask),
+        };
+        return await callback(mockManager);
+      });
 
       await service.updateProgress(taskId, progressDto);
 
-      expect(mockRepository.save).toHaveBeenCalled();
+      expect(mockDataSource.transaction).toHaveBeenCalled();
     });
   });
 
@@ -128,11 +152,11 @@ describe('TaskService - Complete Coverage', () => {
         getManyAndCount: jest.fn().mockResolvedValue([[{ id: 'task-1', status: TaskStatus.TODO }], 1]),
       };
 
-      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      repository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findAll(filterDto);
 
-      expect(result.items).toBeDefined();
+      expect(result.tasks).toBeDefined();
     });
 
     it('should filter by assigneeId', async () => {
@@ -152,7 +176,7 @@ describe('TaskService - Complete Coverage', () => {
         getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
       };
 
-      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      repository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findAll(filterDto);
 
@@ -163,12 +187,14 @@ describe('TaskService - Complete Coverage', () => {
   describe('remove', () => {
     it('should soft delete a task', async () => {
       const taskId = 'task-1';
+      const mockTask = { id: taskId };
 
-      mockRepository.delete.mockResolvedValue({ affected: 1 });
+      repository.findOne.mockResolvedValue(mockTask);
+      repository.softDelete.mockResolvedValue({ affected: 1 });
 
       await service.remove(taskId);
 
-      expect(mockRepository.delete).toHaveBeenCalledWith(taskId);
+      expect(repository.softDelete).toHaveBeenCalledWith(taskId);
     });
   });
 });

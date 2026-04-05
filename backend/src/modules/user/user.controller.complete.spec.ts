@@ -9,6 +9,9 @@ describe('UserController - Complete Coverage', () => {
     findById: jest.fn(),
     findByEmail: jest.fn(),
     findAll: jest.fn(),
+    findAllWithPagination: jest.fn(),
+    update: jest.fn(),
+    updateProfile: jest.fn(),
   };
 
   beforeEach(() => {
@@ -39,34 +42,41 @@ describe('UserController - Complete Coverage', () => {
 
   describe('findAll', () => {
     it('should return all users', async () => {
-      const mockUsers = [
-        { id: 'user-1', email: 'user1@example.com', name: 'User 1' },
-        { id: 'user-2', email: 'user2@example.com', name: 'User 2' },
-      ];
+      const mockUsers = {
+        items: [
+          { id: 'user-1', email: 'user1@example.com', name: 'User 1' },
+          { id: 'user-2', email: 'user2@example.com', name: 'User 2' },
+        ],
+        total: 2,
+        page: 1,
+        pageSize: 10,
+      };
 
-      mockUserService.findAll.mockResolvedValue(mockUsers);
+      mockUserService.findAllWithPagination.mockResolvedValue(mockUsers);
 
       const result = await controller.findAll({});
 
-      expect(mockUserService.findAll).toHaveBeenCalled();
+      expect(mockUserService.findAllWithPagination).toHaveBeenCalled();
       expect(result).toEqual(mockUsers);
     });
-  });
-});
+
+    it('should update user profile', async () => {
+      const mockRequest = {
+        user: { id: 'user-1' },
       };
 
       const updateDto = {
-        name: 'Updated Name',
+        username: 'Updated Name',
       };
 
       const mockUpdatedUser = {
         id: 'user-1',
-        name: 'Updated Name',
+        username: 'Updated Name',
       };
 
       mockUserService.updateProfile.mockResolvedValue(mockUpdatedUser);
 
-      const result = await controller.updateProfile(mockRequest, updateDto);
+      const result = await controller.update('user-1', updateDto as any);
 
       expect(mockUserService.updateProfile).toHaveBeenCalledWith('user-1', updateDto);
       expect(result).toEqual(mockUpdatedUser);

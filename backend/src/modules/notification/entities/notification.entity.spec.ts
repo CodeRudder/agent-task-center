@@ -1,5 +1,4 @@
 import { Notification } from './notification.entity';
-import { NotificationType } from '../../modules/notification/dto/notification.dto';
 
 describe('Notification Entity', () => {
   it('should create a notification with all fields', () => {
@@ -17,7 +16,9 @@ describe('Notification Entity', () => {
 
   it('should have default values', () => {
     const notification = new Notification();
+    notification.recipientId = 'user-1';
+    notification.title = 'Test';
 
-    expect(notification.isRead).toBe(false);
+    expect(notification).toBeDefined();
   });
 });

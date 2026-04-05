@@ -19,6 +19,7 @@ describe('NotificationService', () => {
     update: jest.fn(),
     delete: jest.fn(),
     count: jest.fn(),
+    remove: jest.fn(),
   };
 
   const mockQueryBuilder = {
@@ -135,7 +136,7 @@ describe('NotificationService', () => {
 
     it('should filter by type', async () => {
       const queryDto: QueryNotificationDto = {
-        type: 'task_created',
+        type: NotificationType.TASK_ASSIGNED,
         page: 1,
         pageSize: 10,
       };
@@ -419,12 +420,16 @@ describe('NotificationService', () => {
 
   describe('remove', () => {
     it('should remove a notification', async () => {
-      mockRepository.findOne.mockResolvedValue({ id: 'notif-1', recipientId: 'user-1' } as Notification);
-      mockRepository.softDelete.mockResolvedValue({ affected: 1 });
+      const notification = { id: 'notif-1', recipientId: 'user-1' } as Notification;
+      mockRepository.findOne.mockResolvedValue(notification);
+      mockRepository.remove.mockResolvedValue(undefined);
 
       await service.remove('notif-1', 'user-1');
 
-      expect(mockRepository.softDelete).toHaveBeenCalledWith('notif-1');
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'notif-1' },
+      });
+      expect(mockRepository.remove).toHaveBeenCalledWith(notification);
     });
   });
 });

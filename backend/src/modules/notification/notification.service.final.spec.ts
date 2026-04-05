@@ -90,5 +90,3 @@ describe('NotificationService - Final Push', () => {
     });
   });
 });
-  });
-});

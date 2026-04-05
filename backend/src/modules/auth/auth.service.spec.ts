@@ -3,7 +3,10 @@ import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { mockRepository, MockDataSource, mockJwtService } from '@common/utils/mocks';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -27,17 +30,19 @@ describe('AuthService', () => {
         AuthService,
         {
           provide: JwtService,
-          useValue: {
-            sign: jest.fn().mockReturnValue('test-access-token'),
-          },
+          useValue: mockJwtService(),
         },
         {
           provide: getRepositoryToken(User),
-          useValue: {
-            findOne: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-          },
+          useValue: mockRepository(),
+        },
+        {
+          provide: getRepositoryToken(PasswordResetToken),
+          useValue: mockRepository(),
+        },
+        {
+          provide: DataSource,
+          useValue: MockDataSource,
         },
       ],
     }).compile();
@@ -63,12 +68,12 @@ describe('AuthService', () => {
       userRepository.create.mockReturnValue({
         ...mockUser,
         email: registerDto.email,
-        name: registerDto.name,
+        displayName: registerDto.name,
       });
       userRepository.save.mockResolvedValue({
         ...mockUser,
         email: registerDto.email,
-        name: registerDto.name,
+        displayName: registerDto.name,
       });
 
       const result = await service.register(registerDto);

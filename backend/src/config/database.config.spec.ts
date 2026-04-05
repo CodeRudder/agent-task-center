@@ -5,7 +5,7 @@ describe('Database Config', () => {
     const config = databaseConfig();
 
     expect(config).toBeDefined();
-    expect(config.type).toBe('mysql');
+    expect(config.type).toBe('postgres');
     expect(config.host).toBeDefined();
     expect(config.port).toBeDefined();
     expect(config.username).toBeDefined();

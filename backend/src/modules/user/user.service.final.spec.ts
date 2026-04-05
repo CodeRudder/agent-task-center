@@ -1,23 +1,21 @@
 import { UserService } from './user.service';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { Permission } from './entities/permission.entity';
+import { RolePermission } from './entities/role-permission.entity';
+import { mockRepository } from '@common/utils/mocks';
 
 describe('UserService - Final Push', () => {
   let service: UserService;
-  let repository: Repository<User>;
-
-  const mockRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  };
+  let repository: any;
+  let permissionRepository: any;
+  let rolePermissionRepository: any;
 
   beforeEach(() => {
-    repository = mockRepository as any;
-    service = new UserService(repository);
+    repository = mockRepository();
+    permissionRepository = mockRepository();
+    rolePermissionRepository = mockRepository();
+    service = new UserService(repository, permissionRepository, rolePermissionRepository);
   });
 
   describe('findById', () => {
@@ -28,19 +26,17 @@ describe('UserService - Final Push', () => {
         name: 'Test User',
       };
 
-      mockRepository.findOne.mockResolvedValue(mockUser);
+      repository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findById('user-1');
 
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null if user not found', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException if user not found', async () => {
+      repository.findOne.mockResolvedValue(null);
 
-      const result = await service.findById('non-existent');
-
-      expect(result).toBeNull();
+      await expect(service.findById('non-existent')).rejects.toThrow('User not found');
     });
   });
 
@@ -51,7 +47,7 @@ describe('UserService - Final Push', () => {
         email: 'test@example.com',
       };
 
-      mockRepository.findOne.mockResolvedValue(mockUser);
+      repository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findByEmail('test@example.com');
 
@@ -63,7 +59,7 @@ describe('UserService - Final Push', () => {
     it('should update user profile', async () => {
       const userId = 'user-1';
       const updateDto = {
-        name: 'Updated Name',
+        displayName: 'Updated Name',
         avatar: 'avatar-url',
       };
 
@@ -72,12 +68,12 @@ describe('UserService - Final Push', () => {
         ...updateDto,
       };
 
-      mockRepository.findOne.mockResolvedValue({ id: userId });
-      mockRepository.save.mockResolvedValue(mockUser);
+      repository.findOne.mockResolvedValue({ id: userId });
+      repository.save.mockResolvedValue(mockUser);
 
       const result = await service.updateProfile(userId, updateDto);
 
-      expect(mockRepository.save).toHaveBeenCalled();
+      expect(repository.save).toHaveBeenCalled();
     });
   });
 });

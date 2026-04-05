@@ -24,9 +24,9 @@ export class CreateTaskDto {
   @Length(0, 2000, { message: '任务描述必须在0到2000个字符之间' })
   description?: string;
 
-  @ApiPropertyOptional({ enum: TaskStatus, default: TaskStatus.TODO })
+  @ApiPropertyOptional({ example: 'todo', enum: TaskStatus, default: TaskStatus.TODO })
   @IsOptional()
-  @IsEnum(TaskStatus, { message: '任务状态必须是有效的枚举值' })
+  @IsEnum(TaskStatus, { message: '任务状态必须是有效的枚举值 (todo/in_progress/review/done/blocked)' })
   status?: TaskStatus;
 
   @ApiPropertyOptional({ enum: TaskPriority, default: TaskPriority.MEDIUM })

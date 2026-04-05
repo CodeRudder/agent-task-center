@@ -4,69 +4,50 @@ import { User } from './entities/user.entity';
 import { Permission } from './entities/permission.entity';
 import { RolePermission } from './entities/role-permission.entity';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { mockRepository } from '@common/utils/mocks';
 
 describe('UserService - Additional Coverage', () => {
   let service: UserService;
-  let userRepository: Repository<User>;
-  let permissionRepository: Repository<Permission>;
-  let rolePermissionRepository: Repository<RolePermission>;
-
-  const mockUserRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-  };
-
-  const mockPermissionRepository = {
-    find: jest.fn(),
-    findOne: jest.fn(),
-  };
-
-  const mockRolePermissionRepository = {
-    find: jest.fn(),
-  };
+  let repository: any;
+  let permissionRepository: any;
+  let rolePermissionRepository: any;
 
   beforeEach(() => {
-    userRepository = mockUserRepository as any;
-    permissionRepository = mockPermissionRepository as any;
-    rolePermissionRepository = mockRolePermissionRepository as any;
-    service = new UserService(userRepository, permissionRepository, rolePermissionRepository);
+    repository = mockRepository();
+    permissionRepository = mockRepository();
+    rolePermissionRepository = mockRepository();
+    service = new UserService(repository, permissionRepository, rolePermissionRepository);
   });
 
   describe('findAll', () => {
-    it('should return all users', async () => {
+    it('should return all users with pagination', async () => {
       const mockUsers = [
-        { id: '1', email: 'user1@example.com', name: 'User 1' },
-        { id: '2', email: 'user2@example.com', name: 'User 2' },
+        { id: '1', email: 'user1@example.com', displayName: 'User 1' },
+        { id: '2', email: 'user2@example.com', displayName: 'User 2' },
       ];
 
-      mockRepository.find.mockResolvedValue(mockUsers);
+      repository.findAndCount.mockResolvedValue([mockUsers, mockUsers.length]);
 
-      const result = await service.findAll();
+      const result = await service.findAll(1, 10);
 
-      expect(result).toEqual(mockUsers);
-      expect(mockRepository.find).toHaveBeenCalled();
+      expect(result.users).toEqual(mockUsers);
+      expect(result.total).toEqual(mockUsers.length);
     });
   });
 
   describe('findById', () => {
     it('should return a user by id', async () => {
-      const mockUser = { id: '1', email: 'user@example.com', name: 'User' };
+      const mockUser = { id: '1', email: 'user@example.com', displayName: 'User' };
 
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      repository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findById('1');
 
       expect(result).toEqual(mockUser);
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: '1' } });
     });
 
     it('should throw NotFoundException if user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(null);
 
       await expect(service.findById('999')).rejects.toThrow(NotFoundException);
     });
@@ -74,16 +55,13 @@ describe('UserService - Additional Coverage', () => {
 
   describe('findByEmail', () => {
     it('should return a user by email', async () => {
-      const mockUser = { id: '1', email: 'user@example.com', name: 'User' };
+      const mockUser = { id: '1', email: 'user@example.com', displayName: 'User' };
 
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      repository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findByEmail('user@example.com');
 
       expect(result).toEqual(mockUser);
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { email: 'user@example.com' } });
     });
-  });
-});
   });
 });

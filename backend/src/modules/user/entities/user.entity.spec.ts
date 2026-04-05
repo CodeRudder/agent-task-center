@@ -6,7 +6,7 @@ describe('User Entity', () => {
     user.id = 'user-001';
     user.email = 'test@example.com';
     user.password = 'hashedpassword';
-    user.name = 'Test User';
+    user.displayName = 'Test User';
     user.role = 'user';
     user.isActive = true;
     user.createdAt = new Date();
@@ -15,7 +15,7 @@ describe('User Entity', () => {
     expect(user.id).toBe('user-001');
     expect(user.email).toBe('test@example.com');
     expect(user.password).toBe('hashedpassword');
-    expect(user.name).toBe('Test User');
+    expect(user.displayName).toBe('Test User');
     expect(user.role).toBe('user');
     expect(user.isActive).toBe(true);
     expect(user.createdAt).toBeInstanceOf(Date);
@@ -35,11 +35,11 @@ describe('User Entity', () => {
     user.id = 'user-002';
     user.email = 'minimal@example.com';
     user.password = 'password123';
-    user.name = 'Minimal User';
+    user.displayName = 'Minimal User';
     user.feishuOpenId = 'feishu-123';
-    user.avatar = 'https://example.com/avatar.png';
+    user.avatarUrl = 'https://example.com/avatar.png';
 
     expect(user.feishuOpenId).toBe('feishu-123');
-    expect(user.avatar).toBe('https://example.com/avatar.png');
+    expect(user.avatarUrl).toBe('https://example.com/avatar.png');
   });
 });

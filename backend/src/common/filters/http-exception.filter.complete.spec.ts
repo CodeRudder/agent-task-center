@@ -1,12 +1,15 @@
 import { HttpExceptionFilter } from './http-exception.filter';
 import { ArgumentsHost, HttpException } from '@nestjs/common';
 import { Response } from 'express';
+import { LoggerService } from '../logger/logger.service';
 
 describe('HttpExceptionFilter - Complete Coverage', () => {
   let filter: HttpExceptionFilter;
+  let logger: LoggerService;
 
   beforeEach(() => {
-    filter = new HttpExceptionFilter();
+    logger = new LoggerService('Test');
+    filter = new HttpExceptionFilter(logger);
   });
 
   describe('catch', () => {

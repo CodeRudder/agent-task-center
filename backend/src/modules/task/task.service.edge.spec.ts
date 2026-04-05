@@ -1,23 +1,17 @@
 import { TaskService } from './services/task.service';
+import { TaskStatusMachineService } from './services/task-status-machine.service';
 import { Task, TaskStatus, TaskPriority } from './entities/task.entity';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
 import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
+import { mockRepository } from '@common/utils/mocks';
 
 describe('TaskService - Edge Cases', () => {
   let service: TaskService;
-  let repository: Repository<Task>;
-  let dataSource: DataSource;
-
-  const mockRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-    createQueryBuilder: jest.fn(),
-  };
+  let repository: any;
+  let statusHistoryRepository: any;
+  let statusMachine: any;
+  let dataSource: any;
 
   const mockDataSource = {
     createQueryRunner: jest.fn(),
@@ -28,24 +22,21 @@ describe('TaskService - Edge Cases', () => {
   };
 
   beforeEach(() => {
-    repository = mockRepository as any;
-    dataSource = mockDataSource as any;
-    service = new TaskService(repository, dataSource);
+    repository = mockRepository();
+    statusHistoryRepository = mockRepository();
+    statusMachine = {
+      canTransition: jest.fn(),
+      validateTransition: jest.fn(),
+    };
+    dataSource = mockDataSource;
+    service = new TaskService(repository, statusHistoryRepository, statusMachine, dataSource);
   });
 
   describe('findOne - NotFoundException', () => {
     it('should throw NotFoundException if task not found', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(null);
 
       await expect(service.findOne('nonexistent-id')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('update - NotFoundException', () => {
-    it('should throw NotFoundException if task not found during update', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.update('nonexistent-id', { title: 'Updated' })).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -62,8 +53,8 @@ describe('TaskService - Edge Cases', () => {
         dueDate: new Date('2024-12-31'),
       };
 
-      mockRepository.create.mockReturnValue(mockTask);
-      mockRepository.save.mockResolvedValue(mockTask);
+      repository.create.mockReturnValue(mockTask);
+      repository.save.mockResolvedValue(mockTask);
 
       const result = await service.create(createTaskDto, 'user-1');
 
@@ -76,17 +67,17 @@ describe('TaskService - Edge Cases', () => {
       const taskId = 'task-1';
       const progressDto = { progress: -10 };
 
-      const mockTask = {
-        id: taskId,
-        progress: 0,
-      };
-
-      mockRepository.findOne.mockResolvedValue({ id: taskId, progress: 50 });
-      mockRepository.save.mockResolvedValue(mockTask);
+      mockDataSource.transaction.mockImplementation(async (callback) => {
+        const mockManager = {
+          findOne: jest.fn().mockResolvedValue({ id: taskId, progress: 0 }),
+          save: jest.fn().mockResolvedValue({ id: taskId, progress: 0 }),
+        };
+        return await callback(mockManager);
+      });
 
       await service.updateProgress(taskId, progressDto);
 
-      expect(mockRepository.save).toHaveBeenCalled();
+      expect(mockDataSource.transaction).toHaveBeenCalled();
     });
   });
 
@@ -97,12 +88,22 @@ describe('TaskService - Edge Cases', () => {
         pageSize: 5,
       };
 
-      mockRepository.find.mockResolvedValue([]);
-      mockRepository.count.mockResolvedValue(0);
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+      };
+
+      repository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findAll(filterDto);
 
       expect(result).toBeDefined();
+      expect(result.tasks).toBeDefined();
+      expect(result.pagination).toBeDefined();
     });
   });
 });

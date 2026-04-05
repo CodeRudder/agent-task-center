@@ -6,7 +6,7 @@ describe('LocalStrategy', () => {
   let authService: AuthService;
 
   const mockAuthService = {
-    validateUser: jest.fn(),
+    validateUserByEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -30,18 +30,18 @@ describe('LocalStrategy', () => {
         email: 'test@example.com',
       };
 
-      mockAuthService.validateUser.mockResolvedValue(mockUser);
+      mockAuthService.validateUserByEmail.mockResolvedValue(mockUser);
 
-      const result = await strategy.validate('testuser', 'password123');
+      const result = await strategy.validate('test@example.com', 'password123');
 
-      expect(mockAuthService.validateUser).toHaveBeenCalledWith('testuser', 'password123');
+      expect(mockAuthService.validateUserByEmail).toHaveBeenCalledWith('test@example.com', 'password123');
       expect(result).toEqual(mockUser);
     });
 
     it('should throw error when credentials are invalid', async () => {
-      mockAuthService.validateUser.mockResolvedValue(null);
+      mockAuthService.validateUserByEmail.mockResolvedValue(null);
 
-      await expect(strategy.validate('testuser', 'wrongpassword')).rejects.toThrow();
+      await expect(strategy.validate('test@example.com', 'wrongpassword')).rejects.toThrow();
     });
   });
 });

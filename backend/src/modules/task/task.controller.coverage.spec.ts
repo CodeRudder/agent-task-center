@@ -51,7 +51,8 @@ describe('TaskController - Additional Coverage', () => {
       const result = await controller.create(createTaskDto, mockRequest);
 
       expect(mockTaskService.create).toHaveBeenCalledWith(createTaskDto, 'user-1');
-      expect(result).toEqual(expectedResult);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(expectedResult);
     });
   });
 

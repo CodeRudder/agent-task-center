@@ -12,6 +12,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   BadRequestException,
+  NotFoundException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -133,7 +134,27 @@ export class TaskController {
   async findOne(
     @Param("id") id: string,
   ): Promise<Task> {
-    return this.taskService.findOne(id);
+    try {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        throw new BadRequestException('Invalid task ID format');
+      }
+
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      return task;
+    } catch (error) {
+      // Re-throw known HTTP exceptions
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Wrap unknown errors
+      console.error('[TaskController] Error in findOne:', error);
+      throw new BadRequestException('Failed to retrieve task');
+    }
   }
 
   @Put(":id")
@@ -143,7 +164,27 @@ export class TaskController {
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
-    return this.taskService.update(id, updateTaskDto, req.user.id);
+    try {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        throw new BadRequestException('Invalid task ID format');
+      }
+
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      return this.taskService.update(id, updateTaskDto, req.user.id);
+    } catch (error) {
+      // Re-throw known HTTP exceptions
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Wrap unknown errors
+      console.error('[TaskController] Error in updatePut:', error);
+      throw new BadRequestException('Failed to update task');
+    }
   }
 
   @Patch(":id")
@@ -153,7 +194,27 @@ export class TaskController {
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
-    return this.taskService.update(id, updateTaskDto, req.user.id);
+    try {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        throw new BadRequestException('Invalid task ID format');
+      }
+
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      return this.taskService.update(id, updateTaskDto, req.user.id);
+    } catch (error) {
+      // Re-throw known HTTP exceptions
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Wrap unknown errors
+      console.error('[TaskController] Error in update:', error);
+      throw new BadRequestException('Failed to update task');
+    }
   }
 
   @Patch(":id/progress")
@@ -162,7 +223,19 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updateProgressDto: UpdateProgressDto,
   ): Promise<Task> {
-    return this.taskService.updateProgress(id, updateProgressDto);
+    try {
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      return this.taskService.updateProgress(id, updateProgressDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[TaskController] Error in updateProgress:', error);
+      throw new BadRequestException('Failed to update task progress');
+    }
   }
 
   @Patch(":id/status")
@@ -175,20 +248,28 @@ export class TaskController {
     try {
       console.log('[TaskController] Updating task status:', id, 'to:', dto.status);
       console.log('[TaskController] Update DTO:', JSON.stringify(dto));
-      
+
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+
       const result = await this.taskService.updateStatus(
         id,
         dto,
         req.user.id,
         req.user.type || "user",
       );
-      
+
       console.log('[TaskController] Task status updated successfully');
       return result;
     } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
       console.error('[TaskController] Error updating task status:', error);
       console.error('[TaskController] Error stack:', error.stack);
-      throw error;
+      throw new BadRequestException('Failed to update task status');
     }
   }
 
@@ -244,7 +325,19 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() assignDto: { assigneeId: string },
   ): Promise<Task> {
-    return this.taskService.assignTask(id, assignDto.assigneeId);
+    try {
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      return this.taskService.assignTask(id, assignDto.assigneeId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[TaskController] Error in assignTask:', error);
+      throw new BadRequestException('Failed to assign task');
+    }
   }
 
   @Patch(":id/priority")
@@ -253,8 +346,20 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updatePriorityDto: { priority: string },
   ): Promise<Task> {
-    const priority = updatePriorityDto.priority as unknown as TaskPriority;
-    return this.taskService.updatePriority(id, priority);
+    try {
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      const priority = updatePriorityDto.priority as unknown as TaskPriority;
+      return this.taskService.updatePriority(id, priority);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[TaskController] Error in updatePriority:', error);
+      throw new BadRequestException('Failed to update task priority');
+    }
   }
 
   @Patch(":id/duedate")
@@ -263,15 +368,40 @@ export class TaskController {
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updateDueDateDto: { dueDate: string },
   ): Promise<Task> {
-    return this.taskService.updateDueDate(id, updateDueDateDto.dueDate);
+    try {
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      return this.taskService.updateDueDate(id, updateDueDateDto.dueDate);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[TaskController] Error in updateDueDate:', error);
+      throw new BadRequestException('Failed to update task due date');
+    }
   }
 
   @Delete(":id")
   @ApiOperation({ summary: "Delete task" })
   async remove(
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
-  ): Promise<void> {
-    return this.taskService.remove(id);
+  ): Promise<{success: boolean; message: string}> {
+    try {
+      const task = await this.taskService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      await this.taskService.remove(id);
+      return { success: true, message: 'Task deleted successfully' };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[TaskController] Error in remove:', error);
+      throw new BadRequestException('Failed to delete task');
+    }
   }
 
   // 评论相关路由
@@ -300,6 +430,26 @@ export class TaskController {
       ...createCommentDto,
       taskId: id,
     });
+  }
+
+  @Get(':id/comments/:commentId')
+  @ApiOperation({ summary: 'Get comment details' })
+  async getCommentDetail(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('commentId', new ParseUUIDPipe({ version: '4' })) commentId: string,
+  ) {
+    return this.commentService.findOne(commentId);
+  }
+
+  @Put(':id/comments/:commentId')
+  @ApiOperation({ summary: 'Update a comment' })
+  async updateComment(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('commentId', new ParseUUIDPipe({ version: '4' })) commentId: string,
+    @Body() updateCommentDto: any,
+    @Request() req: any,
+  ) {
+    return this.commentService.update(req.user.id, commentId, updateCommentDto);
   }
 
   @Delete(':id/comments/:commentId')

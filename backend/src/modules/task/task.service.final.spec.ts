@@ -1,41 +1,26 @@
 import { TaskService } from './services/task.service';
+import { TaskStatusMachineService } from './services/task-status-machine.service';
 import { Task, TaskStatus, TaskPriority } from './entities/task.entity';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
 import { Repository, DataSource } from 'typeorm';
+import { mockRepository, MockDataSource } from '@common/utils/mocks';
 
 describe('TaskService - Final Coverage', () => {
   let service: TaskService;
-  let repository: Repository<Task>;
-  let dataSource: DataSource;
-
-  const mockRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-  };
-
-  const mockDataSource = {
-    transaction: jest.fn((cb) => cb({
-      queryRunner: {
-        connect: jest.fn(),
-        startTransaction: jest.fn(),
-        commitTransaction: jest.fn(),
-        rollbackTransaction: jest.fn(),
-        release: jest.fn(),
-      },
-      manager: {
-        save: jest.fn(),
-      },
-    })),
-  };
+  let repository: any;
+  let statusHistoryRepository: any;
+  let statusMachine: any;
+  let dataSource: any;
 
   beforeEach(() => {
-    repository = mockRepository as any;
-    dataSource = mockDataSource as any;
-    service = new TaskService(repository, dataSource);
+    repository = mockRepository();
+    statusHistoryRepository = mockRepository();
+    statusMachine = {
+      canTransition: jest.fn(),
+      validateTransition: jest.fn(),
+    };
+    dataSource = MockDataSource;
+    service = new TaskService(repository, statusHistoryRepository, statusMachine, dataSource);
   });
 
   describe('create with all fields', () => {
@@ -46,60 +31,56 @@ describe('TaskService - Final Coverage', () => {
         priority: TaskPriority.URGENT,
         dueDate: '2024-12-31',
         assigneeId: 'user-1',
-        parentId: 'parent-1',
-        metadata: { key: 'value' },
       };
 
       const mockTask = {
         id: 'task-1',
         ...createTaskDto,
-        dueDate: new Date(createTaskDto.dueDate),
-        status: TaskStatus.TODO,
       };
 
-      mockRepository.create.mockReturnValue(mockTask);
-      mockRepository.save.mockResolvedValue(mockTask);
+      repository.create.mockReturnValue(mockTask);
+      repository.save.mockResolvedValue(mockTask);
 
       const result = await service.create(createTaskDto, 'user-1');
 
-      expect(result).toBeDefined();
+      expect(result).toEqual(mockTask);
+      expect(repository.create).toHaveBeenCalled();
     });
   });
 
-  describe('updateProgress edge cases', () => {
-    it('should handle progress at exactly 100', async () => {
-      const taskId = 'task-1';
-      const progressDto = { progress: 100 };
+  describe('update with partial data', () => {
+    it('should update only provided fields', async () => {
+      const updateDto = { title: 'Updated Title' };
+      const mockTask = { id: 'task-1', title: 'Updated Title', creatorId: 'user-1', assigneeId: 'user-1' };
 
-      const mockTask = {
-        id: taskId,
-        progress: 100,
-        status: TaskStatus.DONE,
-      };
+      repository.findOne.mockResolvedValue(mockTask);
+      repository.update.mockResolvedValue({ affected: 1 });
+      repository.findOne.mockResolvedValue(mockTask);
 
-      mockRepository.findOne.mockResolvedValue({ id: taskId, progress: 50 });
-      mockRepository.save.mockResolvedValue(mockTask);
+      const result = await service.update('task-1', updateDto, 'user-1');
 
-      const result = await service.updateProgress(taskId, progressDto);
-
-      expect(result.progress).toBe(100);
+      expect(result.title).toBe('Updated Title');
     });
   });
 
-  describe('findAll pagination', () => {
-    it('should handle large page numbers', async () => {
-      const filterDto = {
-        page: 100,
-        pageSize: 10,
-      };
+  describe('delete with soft delete', () => {
+    it('should soft delete task', async () => {
+      const mockTask = { id: 'task-1' };
 
-      mockRepository.find.mockResolvedValue([]);
-      mockRepository.count.mockResolvedValue(0);
+      repository.findOne.mockResolvedValue(mockTask);
+      repository.softDelete.mockResolvedValue({ affected: 1 });
 
-      const result = await service.findAll(filterDto);
+      await service.remove('task-1');
 
-      expect(result.items).toEqual([]);
-      expect(result.total).toBe(0);
+      expect(repository.softDelete).toHaveBeenCalledWith('task-1');
+    });
+  });
+
+  describe('findOne with not found', () => {
+    it('should throw NotFoundException', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne('nonexistent')).rejects.toThrow();
     });
   });
 });

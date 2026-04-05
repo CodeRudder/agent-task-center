@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Permission } from './entities/permission.entity';
+import { RolePermission } from './entities/role-permission.entity';
+import { Repository } from 'typeorm';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -8,7 +12,15 @@ describe('UserController', () => {
 
   const mockUserService = {
     findById: jest.fn(),
-    findAll: jest.fn(),
+    findAllWithPagination: jest.fn(),
+  };
+
+  const mockPermissionRepository = {
+    findOne: jest.fn(),
+  };
+
+  const mockRolePermissionRepository = {
+    findOne: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -19,9 +31,17 @@ describe('UserController', () => {
           provide: UserService,
           useValue: mockUserService,
         },
+        {
+          provide: getRepositoryToken(Permission),
+          useValue: mockPermissionRepository,
+        },
+        {
+          provide: getRepositoryToken(RolePermission),
+          useValue: mockRolePermissionRepository,
+        },
       ],
     })
-    .overrideGuard(require('../common/guards/permission.guard'))
+    .overrideGuard(require('../user/permission.guard.ts'))
     .useValue({ canActivate: () => true })
     .compile();
 
@@ -77,11 +97,11 @@ describe('UserController', () => {
         },
       ];
 
-      mockUserService.findAll.mockResolvedValue(expectedResult);
+      mockUserService.findAllWithPagination.mockResolvedValue(expectedResult);
 
       const result = await controller.findAll({});
 
-      expect(mockUserService.findAll).toHaveBeenCalled();
+      expect(mockUserService.findAllWithPagination).toHaveBeenCalled();
       expect(result).toEqual(expectedResult);
     });
   });

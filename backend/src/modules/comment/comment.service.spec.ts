@@ -9,6 +9,7 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { NotificationService } from '../notification/notification.service';
 import { User } from '../user/entities/user.entity';
+import { Task } from '../task/entities/task.entity';
 
 describe('CommentService', () => {
   let service: CommentService;
@@ -87,6 +88,10 @@ describe('CommentService', () => {
     findOne: jest.fn(),
   };
 
+  const mockTaskRepository = {
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -106,6 +111,10 @@ describe('CommentService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
+        },
+        {
+          provide: getRepositoryToken(Task),
+          useValue: mockTaskRepository,
         },
         {
           provide: DataSource,
@@ -307,7 +316,7 @@ describe('CommentService', () => {
             .mockResolvedValueOnce({})  // history
             .mockResolvedValueOnce({    // comment
               ...mockComment,
-              content: 'Updated content',
+              content: 'Updated comment content',
               updatedAt: new Date(),
             }),
         };
@@ -316,7 +325,7 @@ describe('CommentService', () => {
 
       const result = await service.update(mockUserId, mockCommentId, mockUpdateCommentDto);
 
-      expect(result.content).toBe('Updated content');
+      expect(result.content).toBe('Updated comment content');
       expect(result.updatedAt).toBeDefined();
     });
   });

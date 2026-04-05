@@ -1,19 +1,20 @@
 import { TaskService } from './services/task.service';
+import { TaskStatusMachineService } from './services/task-status-machine.service';
 import { Task } from './entities/task.entity';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
+import { TaskStatus, TaskPriority } from './entities/task.entity';
+import { mockRepository, MockDataSource } from '@common/utils/mocks';
 
 describe('TaskService - Extended Tests', () => {
   let service: TaskService;
-  let mockRepository: any;
+  let repository: any;
+  let statusHistoryRepository: any;
+  let statusMachine: any;
+  let dataSource: any;
 
   beforeEach(() => {
-    mockRepository = {
-      create: jest.fn(),
-      save: jest.fn(),
-      find: jest.fn(),
-      findOne: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
+    repository = {
+      ...mockRepository(),
       createQueryBuilder: jest.fn(() => ({
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -23,8 +24,13 @@ describe('TaskService - Extended Tests', () => {
         getCount: jest.fn(),
       })),
     };
-
-    service = new TaskService(mockRepository);
+    statusHistoryRepository = mockRepository();
+    statusMachine = {
+      canTransition: jest.fn(),
+      validateTransition: jest.fn(),
+    };
+    dataSource = MockDataSource;
+    service = new TaskService(repository, statusHistoryRepository, statusMachine, dataSource);
   });
 
   describe('create', () => {
@@ -32,129 +38,71 @@ describe('TaskService - Extended Tests', () => {
       const createDto = {
         title: 'New Task',
         description: 'Task description',
-        status: 'pending',
-        priority: 'high',
-        dueDate: new Date('2024-12-31'),
-        assignedTo: 'user-001',
+        priority: TaskPriority.HIGH,
+        assigneeId: 'user-001',
       };
 
       const mockTask = {
         id: 'task-001',
         ...createDto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
-      mockRepository.create.mockReturnValue(mockTask);
-      mockRepository.save.mockResolvedValue(mockTask);
+      repository.create.mockReturnValue(mockTask);
+      repository.save.mockResolvedValue(mockTask);
 
       const result = await service.create(createDto, 'user-001');
 
-      expect(mockRepository.create).toHaveBeenCalled();
-      expect(mockRepository.save).toHaveBeenCalled();
       expect(result).toEqual(mockTask);
     });
   });
 
-  describe('findByStatus', () => {
-    it('should return tasks filtered by status', async () => {
+  describe('findAll', () => {
+    it('should return tasks with filters', async () => {
       const mockTasks = [
-        { id: 'task-001', status: 'pending' },
-        { id: 'task-002', status: 'pending' },
+        { id: 'task-001', title: 'Task 1' },
+        { id: 'task-002', title: 'Task 2' },
       ];
-
-      mockRepository.find.mockResolvedValue(mockTasks);
-
-      const result = await service.findByStatus('pending');
-
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { status: 'pending' },
-      });
-      expect(result).toEqual(mockTasks);
-    });
-  });
-
-  describe('countByStatus', () => {
-    it('should return count of tasks by status', async () => {
-      mockRepository.count.mockResolvedValue(5);
-
-      const result = await service.countByStatus('completed');
-
-      expect(mockRepository.count).toHaveBeenCalledWith({
-        where: { status: 'completed' },
-      });
-      expect(result).toBe(5);
-    });
-  });
-
-  describe('updateProgress', () => {
-    it('should update task progress', async () => {
-      const taskId = 'task-001';
-      const progress = 75;
-
-      mockRepository.update.mockResolvedValue({ affected: 1 });
-
-      const result = await service.updateProgress(taskId, progress);
-
-      expect(mockRepository.update).toHaveBeenCalledWith(taskId, {
-        progress,
-        updatedAt: expect.any(Date),
-      });
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('findByAssignee', () => {
-    it('should return tasks assigned to a user', async () => {
-      const mockTasks = [
-        { id: 'task-001', assignedTo: 'user-001' },
-        { id: 'task-002', assignedTo: 'user-001' },
-      ];
-
-      mockRepository.find.mockResolvedValue(mockTasks);
-
-      const result = await service.findByAssignee('user-001');
-
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { assignedTo: 'user-001' },
-      });
-      expect(result).toEqual(mockTasks);
-    });
-  });
-
-  describe('markAsComplete', () => {
-    it('should mark a task as complete', async () => {
-      const taskId = 'task-001';
-
-      mockRepository.update.mockResolvedValue({ affected: 1 });
-
-      const result = await service.markAsComplete(taskId);
-
-      expect(mockRepository.update).toHaveBeenCalledWith(taskId, {
-        status: 'completed',
-        completedAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-      });
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('search', () => {
-    it('should search tasks by keyword', async () => {
-      const keyword = 'important';
-      const mockTasks = [{ id: 'task-001', title: 'Important Task' }];
 
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
-        orWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockTasks),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockTasks, 2]),
       };
 
-      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      repository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      const result = await service.search(keyword);
+      const result = await service.findAll({ page: 1, pageSize: 10 });
 
-      expect(result).toEqual(mockTasks);
+      expect(result.tasks).toEqual(mockTasks);
+      expect(result.pagination.total).toBe(2);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a task by id', async () => {
+      const mockTask = { id: 'task-001', title: 'Task 1' };
+
+      repository.findOne.mockResolvedValue(mockTask);
+
+      const result = await service.findOne('task-001');
+
+      expect(result).toHaveProperty('id', 'task-001');
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete a task', async () => {
+      const mockTask = { id: 'task-001' };
+
+      repository.findOne.mockResolvedValue(mockTask);
+      repository.softDelete.mockResolvedValue({ affected: 1 });
+
+      await service.remove('task-001');
+
+      expect(repository.softDelete).toHaveBeenCalledWith('task-001');
     });
   });
 });

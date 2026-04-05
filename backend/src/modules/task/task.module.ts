@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskService } from './services/task.service';
 import { TaskStatusMachineService } from './services/task-status-machine.service';
 import { TaskController } from './task.controller';
+import { TestValidationController } from './task.controller.test';
 import { Task } from './entities/task.entity';
 import { Subtask } from './entities/subtask.entity';
 import { TaskDependency } from './entities/task-dependency.entity';
@@ -18,7 +19,7 @@ import { CommentModule } from '../comment/comment.module';
     TypeOrmModule.forFeature([Task, Subtask, TaskDependency, TaskStatusHistory]),
     CommentModule,
   ],
-  controllers: [TaskController, SubtaskController, TaskDependencyController],
+  controllers: [TaskController, SubtaskController, TaskDependencyController, TestValidationController],
   providers: [TaskService, TaskStatusMachineService, SubtaskService, TaskDependencyService],
   exports: [TaskService, TaskStatusMachineService, SubtaskService, TaskDependencyService],
 })

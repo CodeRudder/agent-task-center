@@ -8,6 +8,8 @@ import {
   Delete,
   Request,
   Query,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CommentService } from './comment.service';
@@ -27,7 +29,12 @@ export class CommentController {
     @Request() req: any,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
-    return await this.commentService.create(req.user.id, createCommentDto);
+    try {
+      return await this.commentService.create(req.user.id, createCommentDto);
+    } catch (error) {
+      console.error('[CommentController] Error creating comment:', error);
+      throw new BadRequestException('Failed to create comment');
+    }
   }
 
   // 查询任务的评论列表（更具体的路由，放在前面）
@@ -51,7 +58,19 @@ export class CommentController {
   @Get(':id')
   @ApiOperation({ summary: '获取评论详情' })
   async findOne(@Param('id') id: string): Promise<Comment> {
-    return await this.commentService.findOne(id);
+    try {
+      const comment = await this.commentService.findOne(id);
+      if (!comment) {
+        throw new NotFoundException('Comment not found');
+      }
+      return comment;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[CommentController] Error finding comment:', error);
+      throw new BadRequestException('Failed to retrieve comment');
+    }
   }
 
   // 获取评论历史记录
@@ -69,7 +88,19 @@ export class CommentController {
     @Param('id') id: string,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
-    return await this.commentService.createReply(req.user.id, id, createCommentDto);
+    try {
+      const parentComment = await this.commentService.findOne(id);
+      if (!parentComment) {
+        throw new NotFoundException('Parent comment not found');
+      }
+      return await this.commentService.createReply(req.user.id, id, createCommentDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[CommentController] Error creating reply:', error);
+      throw new BadRequestException('Failed to create reply');
+    }
   }
 
   // 评论点赞（BUG-021修复）
@@ -90,15 +121,39 @@ export class CommentController {
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
   ): Promise<Comment> {
-    return await this.commentService.update(req.user.id, id, updateCommentDto);
+    try {
+      const comment = await this.commentService.findOne(id);
+      if (!comment) {
+        throw new NotFoundException('Comment not found');
+      }
+      return await this.commentService.update(req.user.id, id, updateCommentDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[CommentController] Error updating comment:', error);
+      throw new BadRequestException('Failed to update comment');
+    }
   }
 
   // 删除评论
   @Delete(':id')
   @ApiOperation({ summary: '删除评论' })
   async remove(@Request() req: any, @Param('id') id: string) {
-    await this.commentService.remove(req.user.id, id);
-    return { message: '评论已删除' };
+    try {
+      const comment = await this.commentService.findOne(id);
+      if (!comment) {
+        throw new NotFoundException('Comment not found');
+      }
+      await this.commentService.remove(req.user.id, id);
+      return { message: '评论已删除' };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[CommentController] Error removing comment:', error);
+      throw new BadRequestException('Failed to delete comment');
+    }
   }
 
   // 获取所有评论列表（BUG-015、BUG-020、BUG-021修复）

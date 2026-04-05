@@ -1,27 +1,27 @@
 import { UserService } from './user.service';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { Permission } from './entities/permission.entity';
+import { RolePermission } from './entities/role-permission.entity';
 import { NotFoundException } from '@nestjs/common';
+import { mockRepository } from '@common/utils/mocks';
 
 describe('UserService - Edge Cases', () => {
   let service: UserService;
-  let repository: Repository<User>;
-
-  const mockRepository = {
-    findOne: jest.fn(),
-    find: jest.fn(),
-    save: jest.fn(),
-    create: jest.fn(),
-  };
+  let repository: any;
+  let permissionRepository: any;
+  let rolePermissionRepository: any;
 
   beforeEach(() => {
-    repository = mockRepository as any;
-    service = new UserService(repository);
+    repository = mockRepository();
+    permissionRepository = mockRepository();
+    rolePermissionRepository = mockRepository();
+    service = new UserService(repository, permissionRepository, rolePermissionRepository);
   });
 
   describe('findById - NotFoundException', () => {
     it('should throw NotFoundException if user not found', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(null);
 
       await expect(service.findById('nonexistent-id')).rejects.toThrow(NotFoundException);
     });
@@ -29,7 +29,7 @@ describe('UserService - Edge Cases', () => {
 
   describe('findByEmail', () => {
     it('should return null if email not found', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(null);
 
       const result = await service.findByEmail('nonexistent@example.com');
 
@@ -40,10 +40,10 @@ describe('UserService - Edge Cases', () => {
       const mockUser = {
         id: 'user-1',
         email: 'user@example.com',
-        name: 'Test User',
+        displayName: 'Test User',
       };
 
-      mockRepository.findOne.mockResolvedValue(mockUser);
+      repository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findByEmail('user@example.com');
 
@@ -56,43 +56,46 @@ describe('UserService - Edge Cases', () => {
       const mockUser = {
         id: 'user-1',
         email: 'user@example.com',
-        name: 'Old Name',
+        displayName: 'Old Name',
       };
 
       const updateData = {
-        name: 'New Name',
+        displayName: 'New Name',
       };
 
-      mockRepository.findOne.mockResolvedValue(mockUser);
-      mockRepository.save.mockResolvedValue({ ...mockUser, ...updateData });
+      repository.findOne.mockResolvedValue(mockUser);
+      repository.save.mockResolvedValue({ ...mockUser, ...updateData });
 
       const result = await service.updateProfile('user-1', updateData);
 
-      expect(result.name).toBe('New Name');
+      expect(result.displayName).toBe('New Name');
     });
 
     it('should throw NotFoundException if user not found during update', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(null);
 
-      await expect(service.updateProfile('nonexistent-id', { name: 'New' })).rejects.toThrow(NotFoundException);
+      await expect(service.updateProfile('nonexistent-id', { displayName: 'New' })).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('findAll', () => {
     it('should return users with selected fields', async () => {
       const mockUsers = [
-        { id: 'user-1', email: 'user1@example.com', name: 'User 1' },
-        { id: 'user-2', email: 'user2@example.com', name: 'User 2' },
+        { id: 'user-1', email: 'user1@example.com', displayName: 'User 1' },
+        { id: 'user-2', email: 'user2@example.com', displayName: 'User 2' },
       ];
 
-      mockRepository.find.mockResolvedValue(mockUsers);
+      repository.findAndCount.mockResolvedValue([mockUsers, mockUsers.length]);
 
       const result = await service.findAll();
 
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        select: ['id', 'email', 'name', 'role', 'createdAt'],
+      expect(repository.findAndCount).toHaveBeenCalledWith({
+        select: ['id', 'email', 'displayName', 'role', 'createdAt'],
+        skip: 0,
+        take: 10,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toEqual(mockUsers);
+      expect(result.users).toEqual(mockUsers);
     });
   });
 });

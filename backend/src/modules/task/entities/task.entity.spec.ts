@@ -32,10 +32,10 @@ describe('Task Entity', () => {
     const task = new Task();
     task.id = 'task-002';
     task.title = 'Minimal Task';
-    task.dueDate = null;
-    task.assigneeId = null;
+    task.dueDate = new Date('2024-12-31');
+    task.assigneeId = 'user-001';
 
-    expect(task.dueDate).toBeNull();
-    expect(task.assigneeId).toBeNull();
+    expect(task.dueDate).toEqual(new Date('2024-12-31'));
+    expect(task.assigneeId).toBe('user-001');
   });
 });

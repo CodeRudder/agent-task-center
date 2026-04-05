@@ -10,6 +10,8 @@ import {
   Request,
   ParseUUIDPipe,
   UseGuards,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WebhookService } from '../services/webhook.service';
@@ -28,7 +30,18 @@ export class WebhookController {
   @Post()
   @ApiOperation({ summary: 'Create a new webhook configuration' })
   async create(@Body() createWebhookDto: CreateWebhookDto, @Request() req: any) {
-    return this.webhookService.create(createWebhookDto, req.user.id);
+    try {
+      if (!req.user || !req.user.id) {
+        throw new BadRequestException('User not authenticated');
+      }
+      return this.webhookService.create(createWebhookDto, req.user.id);
+    } catch (error) {
+      console.error('[WebhookController] Error creating webhook:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to create webhook');
+    }
   }
 
   @Get()
@@ -50,7 +63,15 @@ export class WebhookController {
   @Get(':id')
   @ApiOperation({ summary: 'Get webhook configuration details' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.webhookService.findOne(id);
+    try {
+      return this.webhookService.findOne(id);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[WebhookController] Error finding webhook:', error);
+      throw new BadRequestException('Failed to retrieve webhook');
+    }
   }
 
   @Put(':id')
@@ -59,14 +80,30 @@ export class WebhookController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateWebhookDto: UpdateWebhookDto,
   ) {
-    return this.webhookService.update(id, updateWebhookDto);
+    try {
+      return this.webhookService.update(id, updateWebhookDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[WebhookController] Error updating webhook:', error);
+      throw new BadRequestException('Failed to update webhook');
+    }
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete webhook configuration' })
   async remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
-    await this.webhookService.remove(id, req.user.id);
-    return { success: true };
+    try {
+      await this.webhookService.remove(id, req.user.id);
+      return { success: true };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('[WebhookController] Error removing webhook:', error);
+      throw new BadRequestException('Failed to delete webhook');
+    }
   }
 
   @Post(':id/test')

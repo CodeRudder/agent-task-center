@@ -58,7 +58,28 @@ export class RoleController {
   @ApiOperation({ summary: 'Get role details' })
   @ApiResponse({ status: 200, description: 'Role details retrieved successfully' })
   async findOne(@Param('id') id: string) {
-    return this.roleService.findOne(id);
+    const role = await this.roleService.findOne(id);
+    
+    // Convert permissions object to array format for API response
+    // Object format: {tasks: ['view', 'create']}
+    // Array format: ['tasks.view', 'tasks.create']
+    if (role.permissions && typeof role.permissions === 'object') {
+      const permissionsArray: string[] = [];
+      for (const [resource, actions] of Object.entries(role.permissions)) {
+        if (Array.isArray(actions)) {
+          for (const action of actions) {
+            permissionsArray.push(`${resource}.${action}`);
+          }
+        }
+      }
+      // Return a new object with array format permissions
+      return {
+        ...role,
+        permissions: permissionsArray,
+      };
+    }
+    
+    return role;
   }
 
   @Put(':id')

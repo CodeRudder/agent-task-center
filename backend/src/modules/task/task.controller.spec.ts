@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskController } from './task.controller';
 import { TaskService } from './services/task.service';
+import { CommentService } from '../comment/comment.service';
 import { CreateTaskDto, UpdateTaskDto } from './dto/task.dto';
 import { TaskPriority, TaskStatus } from './entities/task.entity';
 
@@ -17,6 +18,10 @@ describe('TaskController', () => {
     updateProgress: jest.fn(),
   };
 
+  const mockCommentService = {
+    findAll: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TaskController],
@@ -24,6 +29,10 @@ describe('TaskController', () => {
         {
           provide: TaskService,
           useValue: mockTaskService,
+        },
+        {
+          provide: CommentService,
+          useValue: mockCommentService,
         },
       ],
     }).compile();
@@ -65,7 +74,8 @@ describe('TaskController', () => {
       const result = await controller.create(createTaskDto, mockRequest);
 
       expect(mockTaskService.create).toHaveBeenCalledWith(createTaskDto, 'user-001');
-      expect(result).toEqual(expectedResult);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(expectedResult);
     });
   });
 
@@ -86,7 +96,7 @@ describe('TaskController', () => {
 
       mockTaskService.findAll.mockResolvedValue(expectedResult);
 
-      const result = await controller.findAll(undefined, undefined, 1, 10);
+      const result = await controller.findAll(undefined, undefined, undefined, 1 as any, 10 as any);
 
       expect(mockTaskService.findAll).toHaveBeenCalledWith({
         status: undefined,

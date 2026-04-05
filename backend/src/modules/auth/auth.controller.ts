@@ -18,7 +18,7 @@ export class AuthController {
   }
 
   @Public()
-  @UseGuards(LocalAuthGuard)
+  // @UseGuards(LocalAuthGuard)  // 移除LocalAuthGuard以允许ValidationPipe先执行
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login with email and password' })

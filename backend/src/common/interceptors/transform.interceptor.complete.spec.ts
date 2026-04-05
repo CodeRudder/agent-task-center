@@ -11,7 +11,13 @@ describe('TransformInterceptor', () => {
 
   describe('intercept', () => {
     it('should transform response', (done) => {
-      const mockExecutionContext = {} as any;
+      const mockExecutionContext = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getResponse: jest.fn().mockReturnValue({
+            statusCode: 200,
+          }),
+        }),
+      } as any;
 
       const mockCallHandler: CallHandler = {
         handle: () => of({ data: 'test' }),
@@ -20,6 +26,8 @@ describe('TransformInterceptor', () => {
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: (result: any) => {
           expect(result).toBeDefined();
+          expect(result.success).toBe(true);
+          expect(result.data).toEqual({ data: 'test' });
           done();
         },
         error: done,

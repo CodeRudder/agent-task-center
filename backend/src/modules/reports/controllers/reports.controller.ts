@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ReportsService } from '../services/reports.service';
@@ -25,27 +25,84 @@ export class ReportsController {
   @Get('trend')
   @ApiOperation({ summary: 'Get trend analysis' })
   @ApiResponse({ status: 200, description: 'Trend analysis retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   @ApiQuery({ name: 'timeRange', required: false })
   @ApiQuery({ name: 'metrics', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
   async getTrend(@Query() query: TrendQueryDto) {
-    return this.reportsService.getTrendAnalysis(query.timeRange || '30d', query.metrics || 'completed,overdue');
+    try {
+      // Validate date format if provided
+      if (query.startDate && isNaN(Date.parse(query.startDate))) {
+        throw new BadRequestException('Invalid startDate format. Use ISO 8601 format (e.g., 2026-01-01)');
+      }
+      if (query.endDate && isNaN(Date.parse(query.endDate))) {
+        throw new BadRequestException('Invalid endDate format. Use ISO 8601 format (e.g., 2026-12-31)');
+      }
+
+      return this.reportsService.getTrendAnalysis(query.timeRange || '30d', query.metrics || 'completed,overdue');
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('[ReportsController] Error in getTrend:', error);
+      throw new BadRequestException('Failed to retrieve trend analysis');
+    }
   }
 
   @Get('comparison')
   @ApiOperation({ summary: 'Get comparison analysis' })
   @ApiResponse({ status: 200, description: 'Comparison analysis retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   @ApiQuery({ name: 'type', required: false })
   @ApiQuery({ name: 'timeRange', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
   async getComparison(@Query() query: ComparisonQueryDto) {
-    return this.reportsService.getComparisonAnalysis(query.type || 'team', query.timeRange || '30d');
+    try {
+      // Validate date format if provided
+      if (query.startDate && isNaN(Date.parse(query.startDate))) {
+        throw new BadRequestException('Invalid startDate format. Use ISO 8601 format (e.g., 2026-01-01)');
+      }
+      if (query.endDate && isNaN(Date.parse(query.endDate))) {
+        throw new BadRequestException('Invalid endDate format. Use ISO 8601 format (e.g., 2026-12-31)');
+      }
+
+      return this.reportsService.getComparisonAnalysis(query.type || 'team', query.timeRange || '30d');
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('[ReportsController] Error in getComparison:', error);
+      throw new BadRequestException('Failed to retrieve comparison analysis');
+    }
   }
 
   @Get('risks')
   @ApiOperation({ summary: 'Get risk analysis' })
   @ApiResponse({ status: 200, description: 'Risk analysis retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   @ApiQuery({ name: 'level', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
   async getRisks(@Query() query: RisksQueryDto) {
-    return this.reportsService.getRiskAnalysis(query.level || 'high,medium,low');
+    try {
+      // Validate date format if provided
+      if (query.startDate && isNaN(Date.parse(query.startDate))) {
+        throw new BadRequestException('Invalid startDate format. Use ISO 8601 format (e.g., 2026-01-01)');
+      }
+      if (query.endDate && isNaN(Date.parse(query.endDate))) {
+        throw new BadRequestException('Invalid endDate format. Use ISO 8601 format (e.g., 2026-12-31)');
+      }
+
+      return this.reportsService.getRiskAnalysis(query.level || 'high,medium,low');
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('[ReportsController] Error in getRisks:', error);
+      throw new BadRequestException('Failed to retrieve risk analysis');
+    }
   }
 
   @Get('export')

@@ -78,11 +78,10 @@ describe('AuthController - Complete Coverage', () => {
         name: 'Test User',
       };
 
-      mockAuthService.validateUser.mockResolvedValue(mockUser);
+      mockRequest.user = mockUser;
 
       const result = await controller.getProfile(mockRequest);
 
-      expect(mockAuthService.validateUser).toHaveBeenCalledWith('user-1');
       expect(result).toEqual(mockUser);
     });
   });

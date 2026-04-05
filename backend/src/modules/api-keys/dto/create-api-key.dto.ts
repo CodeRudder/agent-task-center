@@ -6,12 +6,14 @@ export class CreateApiKeyDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: ['tasks.view', 'tasks.create', 'projects.view'] })
+  @ApiProperty({ example: ['tasks.view', 'tasks.create', 'projects.view'], required: false })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   scopes?: string[];
 
   @ApiProperty({ example: ['tasks.view', 'tasks.create', 'projects.view'], required: false })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   permissions?: string[];

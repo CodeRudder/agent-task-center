@@ -1,46 +1,38 @@
 import { TaskService } from './services/task.service';
-import { Task } from './entities/task.entity';
-import { Repository, DataSource } from 'typeorm';
 import { TaskStatusMachineService } from './services/task-status-machine.service';
+import { Task, TaskStatus, TaskPriority } from './entities/task.entity';
+import { TaskStatusHistory } from './entities/task-status-history.entity';
+import { Repository, DataSource } from 'typeorm';
+import { mockRepository, MockDataSource } from '@common/utils/mocks';
 
 describe('TaskService - Additional Coverage', () => {
   let service: TaskService;
-  let repository: Repository<Task>;
-  let statusHistoryRepository: Repository<any>;
-  let statusMachine: TaskStatusMachineService;
-  let dataSource: DataSource;
+  let repository: any;
+  let statusHistoryRepository: any;
+  let statusMachine: any;
+  let dataSource: any;
 
-  const mockRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-    createQueryBuilder: jest.fn(),
-  };
-
-  const mockStatusHistoryRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-  };
-
-  const mockStatusMachine = {
-    validateTransition: jest.fn(),
-    requireReason: jest.fn(),
-  };
-
-  const mockDataSource = {
-    transaction: jest.fn(),
-    createQueryRunner: jest.fn(),
+  const mockQueryBuilder = {
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
   };
 
   beforeEach(() => {
-    repository = mockRepository as any;
-    statusHistoryRepository = mockStatusHistoryRepository as any;
-    statusMachine = mockStatusMachine as any;
-    dataSource = mockDataSource as any;
+    repository = {
+      ...mockRepository(),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+    };
+    statusHistoryRepository = mockRepository();
+    statusMachine = {
+      validateTransition: jest.fn(),
+      requireReason: jest.fn(),
+      canTransition: jest.fn(),
+    };
+    dataSource = MockDataSource;
     service = new TaskService(repository, statusHistoryRepository, statusMachine, dataSource);
   });
 
@@ -60,7 +52,7 @@ describe('TaskService - Additional Coverage', () => {
         getManyAndCount: jest.fn().mockResolvedValue([mockTasks, 2]),
       };
 
-      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      repository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findAll({ page: 1, pageSize: 10 });
 
@@ -73,30 +65,29 @@ describe('TaskService - Additional Coverage', () => {
     it('should return a task by id', async () => {
       const mockTask = { id: '1', title: 'Task 1', status: TaskStatus.TODO };
 
-      mockRepository.findOne.mockResolvedValue(mockTask);
+      repository.findOne.mockResolvedValue(mockTask);
 
       const result = await service.findOne('1');
 
-      expect(result).toEqual(mockTask);
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(result).toHaveProperty('id', '1');
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: '1' } });
     });
 
-    it('should return null if task not found', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException if task not found', async () => {
+      repository.findOne.mockResolvedValue(null);
 
-      const result = await service.findOne('999');
-
-      expect(result).toBeNull();
+      await expect(service.findOne('999')).rejects.toThrow();
     });
   });
 
   describe('update', () => {
     it('should update a task', async () => {
       const updateDto = { title: 'Updated Task' };
-      const mockTask = { id: '1', ...updateDto };
+      const mockTask = { id: '1', title: 'Updated Task', creatorId: 'user-1', assigneeId: 'user-1' };
 
-      mockRepository.findOne.mockResolvedValue(mockTask);
-      mockRepository.save.mockResolvedValue(mockTask);
+      repository.findOne.mockResolvedValue(mockTask);
+      repository.update.mockResolvedValue({ affected: 1 });
+      repository.findOne.mockResolvedValue(mockTask);
 
       const result = await service.update('1', updateDto, 'user-1');
 
@@ -107,12 +98,12 @@ describe('TaskService - Additional Coverage', () => {
   describe('remove', () => {
     it('should soft delete a task', async () => {
       const mockTask = { id: '1', title: 'Task 1' };
-      mockRepository.findOne.mockResolvedValue(mockTask);
-      mockRepository.softDelete.mockResolvedValue({ affected: 1 });
+      repository.findOne.mockResolvedValue(mockTask);
+      repository.softDelete.mockResolvedValue({ affected: 1 });
 
       const result = await service.remove('1');
 
-      expect(mockRepository.softDelete).toHaveBeenCalledWith('1');
+      expect(repository.softDelete).toHaveBeenCalledWith('1');
     });
   });
 });
