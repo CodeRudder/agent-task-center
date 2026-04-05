@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { Project, ProjectMember, ProjectMemberRole } from './entities/project.entity';
@@ -57,7 +57,7 @@ export class ProjectService {
       return resultProject!;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new BadRequestException('Failed to create project');
     } finally {
       await queryRunner.release();
     }
@@ -80,67 +80,82 @@ export class ProjectService {
       totalPages: number;
     };
   }> {
-    // 获取用户是成员的所有项目ID（ADR-002: 移除关联查询）
-    const members = await this.memberRepository.find({
-      where: { userId },
-    });
+    try {
+      // 获取用户是成员的所有项目ID（ADR-002: 移除关联查询）
+      const members = await this.memberRepository.find({
+        where: { userId },
+      });
 
-    const projectIds = members.map((member) => member.projectId);
+      const projectIds = members.map((member) => member.projectId);
 
-    // 构建查询条件
-    const whereCondition: Record<string, any> = { id: In(projectIds) };
+      // 构建查询条件
+      const whereCondition: Record<string, any> = {};
+      
+      if (projectIds.length > 0) {
+        whereCondition.id = In(projectIds);
+      }
 
-    // 如果提供了status参数，添加过滤条件
-    if (status) {
-      whereCondition.status = status;
+      // 如果提供了status参数，添加过滤条件
+      if (status) {
+        whereCondition.status = status;
+      }
+
+      // 先获取总数
+      const total = await this.projectRepository.count({
+        where: whereCondition,
+      });
+
+      // 分页查询项目
+      const projects = await this.projectRepository.find({
+        where: whereCondition,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+
+      return {
+        projects,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch projects');
     }
-
-    // 先获取总数
-    const total = await this.projectRepository.count({
-      where: whereCondition,
-    });
-
-    // 分页查询项目
-    const projects = await this.projectRepository.find({
-      where: whereCondition,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-
-    return {
-      projects,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    };
   }
 
   /**
    * 获取项目详情
    */
   async findOne(userId: string, projectId: string): Promise<Project> {
-    // ADR-002: 移除关联查询
-    const project = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
+    try {
+      // ADR-002: 移除关联查询
+      const project = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
 
-    if (!project) {
-      throw new NotFoundException('项目不存在');
+      if (!project) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      // 检查用户是否是项目成员
+      const isMember = await this.isMember(userId, projectId);
+      if (!isMember) {
+        throw new ForbiddenException('无权访问该项目');
+      }
+
+      return project;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to fetch project details');
     }
-
-    // 检查用户是否是项目成员
-    const isMember = await this.isMember(userId, projectId);
-    if (!isMember) {
-      throw new ForbiddenException('无权访问该项目');
-    }
-
-    return project;
   }
 
   /**
@@ -151,37 +166,44 @@ export class ProjectService {
     projectId: string,
     updateProjectDto: UpdateProjectDto,
   ): Promise<Project> {
-    const project = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
+    try {
+      const project = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
 
-    if (!project) {
-      throw new NotFoundException('项目不存在');
+      if (!project) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      // 检查权限：只有owner和admin可以更新
+      const member = await this.memberRepository.findOne({
+        where: { projectId, userId },
+      });
+
+      if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
+        throw new ForbiddenException('无权更新该项目');
+      }
+
+      // 更新项目
+      Object.assign(project, updateProjectDto);
+      await this.projectRepository.save(project);
+
+      // ADR-002: 移除关联查询
+      const updatedProject = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
+
+      if (!updatedProject) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      return updatedProject;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to update project');
     }
-
-    // 检查权限：只有owner和admin可以更新
-    const member = await this.memberRepository.findOne({
-      where: { projectId, userId },
-    });
-
-    if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
-      throw new ForbiddenException('无权更新该项目');
-    }
-
-    // 更新项目
-    Object.assign(project, updateProjectDto);
-    await this.projectRepository.save(project);
-
-    // ADR-002: 移除关联查询
-    const updatedProject = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
-
-    if (!updatedProject) {
-      throw new NotFoundException('项目不存在');
-    }
-
-    return updatedProject;
   }
 
   /**
@@ -192,68 +214,85 @@ export class ProjectService {
     projectId: string,
     status: string,
   ): Promise<Project> {
-    // 验证状态值
-    const validStatuses = ['active', 'archived', 'deleted'];
-    if (!validStatuses.includes(status)) {
-      throw new ForbiddenException('无效的状态值');
+    try {
+      // 验证状态值
+      const validStatuses = ['active', 'archived', 'deleted'];
+      if (!validStatuses.includes(status)) {
+        throw new BadRequestException('无效的状态值');
+      }
+
+      const project = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
+
+      if (!project) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      // 检查权限：只有owner和admin可以更新状态
+      const member = await this.memberRepository.findOne({
+        where: { projectId, userId },
+      });
+
+      if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
+        throw new ForbiddenException('无权更新项目状态');
+      }
+
+      // 更新状态
+      project.status = status;
+      await this.projectRepository.save(project);
+
+      // ADR-002: 移除关联查询
+      const updatedProject = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
+
+      if (!updatedProject) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      return updatedProject;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to update project status');
     }
-
-    const project = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
-
-    if (!project) {
-      throw new NotFoundException('项目不存在');
-    }
-
-    // 检查权限：只有owner和admin可以更新状态
-    const member = await this.memberRepository.findOne({
-      where: { projectId, userId },
-    });
-
-    if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
-      throw new ForbiddenException('无权更新项目状态');
-    }
-
-    // 更新状态
-    project.status = status;
-    await this.projectRepository.save(project);
-
-    // ADR-002: 移除关联查询
-    const updatedProject = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
-
-    if (!updatedProject) {
-      throw new NotFoundException('项目不存在');
-    }
-
-    return updatedProject;
   }
 
   /**
    * 删除项目
    */
   async remove(userId: string, projectId: string): Promise<void> {
-    const project = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
+    try {
+      const project = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
 
-    if (!project) {
-      throw new NotFoundException('项目不存在');
+      if (!project) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      // 检查权限：owner和admin都可以删除
+      const member = await this.memberRepository.findOne({
+        where: { projectId, userId },
+      });
+
+      if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
+        throw new ForbiddenException('无权删除该项目');
+      }
+
+      // 软删除项目
+      await this.projectRepository.softDelete(projectId);
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to delete project');
     }
-
-    // 检查权限：owner和admin都可以删除
-    const member = await this.memberRepository.findOne({
-      where: { projectId, userId },
-    });
-
-    if (!member || (member.role !== ProjectMemberRole.OWNER && member.role !== ProjectMemberRole.ADMIN)) {
-      throw new ForbiddenException('无权删除该项目');
-    }
-
-    // 软删除项目
-    await this.projectRepository.softDelete(projectId);
   }
 
   /**
@@ -264,49 +303,56 @@ export class ProjectService {
     projectId: string,
     addMemberDto: AddMemberDto,
   ): Promise<ProjectMember> {
-    // 检查项目是否存在
-    const project = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
+    try {
+      // 检查项目是否存在
+      const project = await this.projectRepository.findOne({
+        where: { id: projectId },
+      });
 
-    if (!project) {
-      throw new NotFoundException('项目不存在');
+      if (!project) {
+        throw new NotFoundException('项目不存在');
+      }
+
+      // 检查权限：只有owner和admin可以添加成员
+      const currentMember = await this.memberRepository.findOne({
+        where: { projectId, userId },
+      });
+
+      if (!currentMember || (currentMember.role !== ProjectMemberRole.OWNER && currentMember.role !== ProjectMemberRole.ADMIN)) {
+        throw new ForbiddenException('无权添加项目成员');
+      }
+
+      // 检查用户是否存在
+      const user = await this.userRepository.findOne({
+        where: { id: addMemberDto.userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('用户不存在');
+      }
+
+      // 检查是否已经是成员
+      const existingMember = await this.memberRepository.findOne({
+        where: { projectId, userId: addMemberDto.userId },
+      });
+
+      if (existingMember) {
+        throw new ForbiddenException('用户已经是项目成员');
+      }
+
+      // 添加成员
+      const member = this.memberRepository.create({
+        projectId,
+        ...addMemberDto,
+      });
+
+      return await this.memberRepository.save(member);
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to add project member');
     }
-
-    // 检查权限：只有owner和admin可以添加成员
-    const currentMember = await this.memberRepository.findOne({
-      where: { projectId, userId },
-    });
-
-    if (!currentMember || (currentMember.role !== ProjectMemberRole.OWNER && currentMember.role !== ProjectMemberRole.ADMIN)) {
-      throw new ForbiddenException('无权添加项目成员');
-    }
-
-    // 检查用户是否存在
-    const user = await this.userRepository.findOne({
-      where: { id: addMemberDto.userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('用户不存在');
-    }
-
-    // 检查是否已经是成员
-    const existingMember = await this.memberRepository.findOne({
-      where: { projectId, userId: addMemberDto.userId },
-    });
-
-    if (existingMember) {
-      throw new ForbiddenException('用户已经是项目成员');
-    }
-
-    // 添加成员
-    const member = this.memberRepository.create({
-      projectId,
-      ...addMemberDto,
-    });
-
-    return await this.memberRepository.save(member);
   }
 
   /**
@@ -317,64 +363,85 @@ export class ProjectService {
     projectId: string,
     targetUserId: string,
   ): Promise<void> {
-    // 检查权限：只有owner和admin可以移除成员
-    const currentMember = await this.memberRepository.findOne({
-      where: { projectId, userId: currentUserId },
-    });
+    try {
+      // 检查权限：只有owner和admin可以移除成员
+      const currentMember = await this.memberRepository.findOne({
+        where: { projectId, userId: currentUserId },
+      });
 
-    if (!currentMember || (currentMember.role !== ProjectMemberRole.OWNER && currentMember.role !== ProjectMemberRole.ADMIN)) {
-      throw new ForbiddenException('无权移除项目成员');
+      if (!currentMember || (currentMember.role !== ProjectMemberRole.OWNER && currentMember.role !== ProjectMemberRole.ADMIN)) {
+        throw new ForbiddenException('无权移除项目成员');
+      }
+
+      // 查找要移除的成员（通过userId）
+      const member = await this.memberRepository.findOne({
+        where: { projectId, userId: targetUserId },
+      });
+
+      if (!member) {
+        throw new NotFoundException('成员不存在');
+      }
+
+      // 不能移除owner
+      if (member.role === ProjectMemberRole.OWNER) {
+        throw new ForbiddenException('无法移除项目所有者');
+      }
+
+      await this.memberRepository.remove(member);
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to remove project member');
     }
-
-    // 查找要移除的成员（通过userId）
-    const member = await this.memberRepository.findOne({
-      where: { projectId, userId: targetUserId },
-    });
-
-    if (!member) {
-      throw new NotFoundException('成员不存在');
-    }
-
-    // 不能移除owner
-    if (member.role === ProjectMemberRole.OWNER) {
-      throw new ForbiddenException('无法移除项目所有者');
-    }
-
-    await this.memberRepository.remove(member);
   }
 
   /**
    * 获取项目的任务列表
    */
   async getTasks(userId: string, projectId: string) {
-    // 检查权限
-    const isMember = await this.isMember(userId, projectId);
-    if (!isMember) {
-      throw new ForbiddenException('无权访问该项目');
-    }
+    try {
+      // 检查权限
+      const isMember = await this.isMember(userId, projectId);
+      if (!isMember) {
+        throw new ForbiddenException('无权访问该项目');
+      }
 
-    // 获取项目的任务列表（ADR-002: 移除关联查询）
-    return await this.taskRepository.find({
-      where: { projectId },
-      order: { createdAt: 'DESC' },
-    });
+      // 获取项目的任务列表（ADR-002: 移除关联查询）
+      return await this.taskRepository.find({
+        where: { projectId },
+        order: { createdAt: 'DESC' },
+      });
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to fetch project tasks');
+    }
   }
 
   /**
    * 查询项目成员列表
    */
   async getMembers(userId: string, projectId: string) {
-    // 检查权限
-    const isMember = await this.isMember(userId, projectId);
-    if (!isMember) {
-      throw new ForbiddenException('无权访问该项目');
-    }
+    try {
+      // 检查权限
+      const isMember = await this.isMember(userId, projectId);
+      if (!isMember) {
+        throw new ForbiddenException('无权访问该项目');
+      }
 
-    // 获取项目成员列表（ADR-002: 移除关联查询）
-    return await this.memberRepository.find({
-      where: { projectId },
-      order: { joinedAt: 'DESC' },
-    });
+      // 获取项目成员列表（ADR-002: 移除关联查询）
+      return await this.memberRepository.find({
+        where: { projectId },
+        order: { joinedAt: 'DESC' },
+      });
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to fetch project members');
+    }
   }
 
   /**
