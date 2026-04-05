@@ -132,7 +132,7 @@ export class TaskController {
   @Get(":id")
   @ApiOperation({ summary: "Get task by ID" })
   async findOne(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
   ): Promise<Task> {
     try {
       const task = await this.taskService.findOne(id);
@@ -154,7 +154,7 @@ export class TaskController {
   @Put(":id")
   @ApiOperation({ summary: "Update task (PUT)" })
   async updatePut(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ): Promise<Task> {
@@ -178,7 +178,7 @@ export class TaskController {
   @Patch(":id")
   @ApiOperation({ summary: "Update task" })
   async update(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ): Promise<Task> {

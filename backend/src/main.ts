@@ -46,13 +46,14 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
+      disableErrorMessages: false,
       exceptionFactory: (errors) => {
         // 只返回第一个错误
         const firstError = errors[0];
         const constraints = firstError.constraints;
 
         if (!constraints) {
-          return new BadRequestException(firstError.toString());
+          return new BadRequestException('请求参数验证失败');
         }
 
         // 将class-validator的英文错误消息转换为中文
@@ -73,9 +74,9 @@ async function bootstrap() {
           'isIn': '值不在允许范围内',
         };
 
-        // 返回第一个验证错误的中文消息
+        // 优先使用自定义的中文消息
         const firstKey = Object.keys(constraints)[0];
-        const message = chineseMessages[firstKey] || constraints[firstKey];
+        const message = chineseMessages[firstKey] || constraints[firstKey] || '验证失败';
 
         return new BadRequestException(message);
       },

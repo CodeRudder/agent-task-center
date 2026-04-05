@@ -68,7 +68,12 @@ export class RefreshTokenDto {
 
 export class ForgotPasswordDto {
   @ApiProperty({ example: 'user@example.com' })
-  @IsEmail()
+  @IsNotEmpty({
+    message: '邮箱是必填字段'
+  })
+  @IsEmail({}, {
+    message: '邮箱格式不正确'
+  })
   email: string;
 }
 

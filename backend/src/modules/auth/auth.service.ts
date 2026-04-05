@@ -104,7 +104,7 @@ export class AuthService {
 
       if (!user) {
         this.recordFailedAttempt(email);
-        throw new UnauthorizedException('用户名或密码错误，请重试');
+        throw new UnauthorizedException('用户名或密码错误');
       }
 
       // Verify password
@@ -112,7 +112,7 @@ export class AuthService {
 
       if (!isPasswordValid) {
         this.recordFailedAttempt(email);
-        throw new UnauthorizedException('用户名或密码错误，请重试');
+        throw new UnauthorizedException('用户名或密码错误');
       }
 
       // Check if user is active
@@ -351,7 +351,7 @@ export class AuthService {
       // 防止通过此接口探测用户邮箱
       console.log(`[forgotPassword] Email not found: ${email}`);
       return {
-        message: '如果该邮箱已注册，您将收到密码重置邮件',
+        message: '密码重置邮件已发送',
       };
     }
 
@@ -376,12 +376,11 @@ export class AuthService {
     // 5. 发送邮件（暂时使用控制台日志）
     // TODO: 配置 SMTP 服务器后，替换为实际邮件发送
     const resetLink = `http://localhost:3002/reset-password?token=${resetToken}`;
-    console.log(`[forgotPassword] Password reset link for ${email}:`);
-    console.log(`[forgotPassword] ${resetLink}`);
+    console.log(`[forgotPassword] Password reset link for ${email}: ${resetLink}`);
     console.log(`[forgotPassword] Token expires at: ${expiresAt.toISOString()}`);
 
     return {
-      message: '如果该邮箱已注册，您将收到密码重置邮件',
+      message: '密码重置邮件已发送',
     };
   }
 
