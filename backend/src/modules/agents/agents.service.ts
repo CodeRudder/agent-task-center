@@ -21,11 +21,16 @@ export class AgentsService {
   async create(createAgentDto: CreateAgentDto, userId: string): Promise<Agent> {
     // 生成不超过60个字符的apiToken（留4个字符给前缀"at_"）
     const randomBytes = Buffer.from(Math.random().toString()).toString('base64').substring(0, 56);
-    const agent = this.agentRepository.create({
+    
+    // Ensure capabilities is a proper array
+    const agentData = {
       ...createAgentDto,
       // createdBy removed - column does not exist in database
       apiToken: `at_${randomBytes}`,
-    });
+    };
+
+    // TypeORM needs explicit array handling for PostgreSQL text[] columns
+    const agent = this.agentRepository.create(agentData);
 
     return this.agentRepository.save(agent);
   }

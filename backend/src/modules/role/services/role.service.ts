@@ -138,7 +138,19 @@ export class RoleService {
   }
 
   async remove(id: string): Promise<{ success: boolean; message: string }> {
-    const role = await this.findOne(id);
+    // Try to find the role first
+    let role;
+    try {
+      role = await this.findOne(id);
+    } catch (error) {
+      // If role not found, rethrow the NotFoundException
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      // If other error, log and rethrow
+      this.logger.error(`Error finding role: ${error.message}`);
+      throw error;
+    }
 
     // Check if trying to delete system role
     if (role.isSystem) {
@@ -146,15 +158,26 @@ export class RoleService {
     }
 
     // Check if role is assigned to any users
-    const userRolesCount = await this.userRoleRepository.count({
-      where: { roleId: id },
-    });
+    let userRolesCount;
+    try {
+      userRolesCount = await this.userRoleRepository.count({
+        where: { roleId: id },
+      });
+    } catch (error) {
+      this.logger.error(`Error checking user roles: ${error.message}`);
+      throw new BadRequestException('Failed to check role assignments');
+    }
 
     if (userRolesCount > 0) {
       throw new ConflictException('Role is assigned to users, cannot delete');
     }
 
-    await this.roleRepository.remove(role);
+    try {
+      await this.roleRepository.remove(role);
+    } catch (error) {
+      this.logger.error(`Error removing role: ${error.message}`);
+      throw new BadRequestException('Failed to remove role');
+    }
     
     return {
       success: true,

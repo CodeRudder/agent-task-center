@@ -104,7 +104,7 @@ export class AuthService {
 
       if (!user) {
         this.recordFailedAttempt(email);
-        throw new UnauthorizedException('用户名或密码错误');
+        throw new UnauthorizedException('邮箱或密码错误');
       }
 
       // Verify password
@@ -112,7 +112,7 @@ export class AuthService {
 
       if (!isPasswordValid) {
         this.recordFailedAttempt(email);
-        throw new UnauthorizedException('用户名或密码错误');
+        throw new UnauthorizedException('邮箱或密码错误');
       }
 
       // Check if user is active

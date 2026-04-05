@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiKey } from '../entities/api-key.entity';
@@ -78,18 +78,16 @@ export class ApiKeysService {
     });
 
     if (!apiKey) {
-      const error = new Error('API Key not found');
-      error.name = 'NotFoundException';
-      throw error;
+      throw new NotFoundException('API Key not found');
     }
 
     // Check if user has permission to delete (only creator can delete)
     if (userId && apiKey.createdBy !== userId) {
-      throw new Error('You do not have permission to delete this API Key');
+      throw new ForbiddenException('You do not have permission to delete this API Key');
     }
 
     await this.apiKeyRepository.remove(apiKey);
-    
+
     return {
       success: true,
       message: 'API密钥删除成功'

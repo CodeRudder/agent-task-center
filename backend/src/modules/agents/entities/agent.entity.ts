@@ -47,7 +47,10 @@ export class Agent {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column('text', { 
+    nullable: true, 
+    array: true 
+  })
   capabilities: string[];
 
   @Column({
