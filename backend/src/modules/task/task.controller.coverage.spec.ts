@@ -66,10 +66,12 @@ describe('TaskController - Additional Coverage', () => {
         progress: 50,
       };
 
+      mockTaskService.findOne.mockResolvedValue(expectedResult as any);
       mockTaskService.updateProgress.mockResolvedValue(expectedResult);
 
       const result = await controller.updateProgress(taskId, progressDto);
 
+      expect(mockTaskService.findOne).toHaveBeenCalledWith(taskId);
       expect(mockTaskService.updateProgress).toHaveBeenCalledWith(taskId, progressDto);
       expect(result).toEqual(expectedResult);
     });
@@ -79,11 +81,17 @@ describe('TaskController - Additional Coverage', () => {
     it('should delete a task', async () => {
       const taskId = 'task-1';
 
+      mockTaskService.findOne.mockResolvedValue({
+        id: taskId,
+        title: 'Test Task',
+      } as any);
       mockTaskService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(taskId);
+      const result = await controller.remove(taskId);
 
+      expect(mockTaskService.findOne).toHaveBeenCalledWith(taskId);
       expect(mockTaskService.remove).toHaveBeenCalledWith(taskId);
+      expect(result).toEqual({ success: true, message: 'Task deleted successfully' });
     });
   });
 });
